@@ -19,15 +19,11 @@ function initPrecisionPayPaymentGateway($) {
     // IF ALREADY REGISTERED OR LINKED BUT NOT YET REGISTERED SET BUTTON AS LINKED
     if (sessionStorage.getItem(SESSION_STORAGE_PLAID)) {
       // If the user already linked but hasn't registered yet, this saves the data on refresh
-      var mcPlaidData = JSON.parse(
-        sessionStorage.getItem(SESSION_STORAGE_PLAID)
-      );
+      var mcPlaidData = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_PLAID));
       addDataToHiddenFields(mcPlaidData);
       updateUIToSuccess();
     } else if (sessionStorage.getItem(SESSION_STORAGE_PRECISION_PAY)) {
-      var precisionPayToken = JSON.parse(
-        sessionStorage.getItem(SESSION_STORAGE_PRECISION_PAY)
-      );
+      var precisionPayToken = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_PRECISION_PAY));
       addPPDataToHiddenField(precisionPayToken);
       updateUIToSuccess();
     }
@@ -47,10 +43,7 @@ function initPrecisionPayPaymentGateway($) {
         .first()
         .text()
         .replace(/(\n|\t)/gm, '');
-      if (
-        errorText === errorMessageTokenExpired ||
-        errorText === errorMessagePlaidTokenExpired
-      ) {
+      if (errorText === errorMessageTokenExpired || errorText === errorMessagePlaidTokenExpired) {
         resetButtonUI();
         removePPDataFromHiddenField();
         sessionStorage.removeItem(SESSION_STORAGE_PRECISION_PAY);
@@ -93,10 +86,7 @@ function initPrecisionPayPaymentGateway($) {
 
   function handlePPData(precisionPayToken) {
     addPPDataToHiddenField(precisionPayToken);
-    sessionStorage.setItem(
-      SESSION_STORAGE_PRECISION_PAY,
-      JSON.stringify(precisionPayToken)
-    );
+    sessionStorage.setItem(SESSION_STORAGE_PRECISION_PAY, JSON.stringify(precisionPayToken));
     updateUIToSuccess();
   }
 
@@ -111,8 +101,6 @@ function initPrecisionPayPaymentGateway($) {
   function addDataToHiddenFields(pd) {
     $('#precisionpay_public_token').val(pd.public_token);
     $('#precisionpay_account_id').val(pd.accountId);
-    $('#precisionpay_bank_name').val(pd.institutionName);
-    $('#precisionpay_account_subtype').val(pd.accountSubtype);
     $('#precisionpay_plaid_user_id').val(pd.precisionPayPlaidUserId);
     $('#precisionpay_registered_user_id').val(pd.precisionPayRegisteredUserId); // Used if a user does one time payment after logging in
   }
@@ -158,11 +146,8 @@ function initPrecisionPayPaymentGateway($) {
           break;
         case 'PrecisionPay::failed':
           var error = event.data.error_message;
-          var mcErrorMessage =
-            '<p class="error" style="color: red">' + error + '</p>';
-          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(
-            mcErrorMessage
-          );
+          var mcErrorMessage = '<p class="error" style="color: red">' + error + '</p>';
+          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
           removePPEventListener();
           break;
         case 'PrecisionPay::canceled':
@@ -220,7 +205,7 @@ function initPrecisionPayPaymentGateway($) {
   function getKey() {
     let data = {
       nonce: mcPaymentGatewayNonce,
-      action: 'mc_get_merch_key',
+      action: 'wc_precisionpay_get_merch_key',
     };
 
     $('#payment').block({
@@ -238,19 +223,14 @@ function initPrecisionPayPaymentGateway($) {
       success: function (data) {
         if (data && data.body) {
           // Remove any errors
-          $(
-            '.payment_box.payment_method_wc_gateway_precisionpay .error'
-          ).remove();
+          $('.payment_box.payment_method_wc_gateway_precisionpay .error').remove();
           mc_merchantKey = data.body.merchantKey;
           $('#payment').unblock();
           openPrecisionPay(mc_merchantKey, orderAmount);
         } else {
           if (data.result === 'failed') {
-            var mcErrorMessage =
-              '<p class="error" style="color: red">' + data.message + '</p>';
-            $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(
-              mcErrorMessage
-            );
+            var mcErrorMessage = '<p class="error" style="color: red">' + data.message + '</p>';
+            $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
           } else {
             console.log('Whoops. Error.', data);
           }
@@ -260,11 +240,8 @@ function initPrecisionPayPaymentGateway($) {
       error: function (err) {
         console.log(err);
         if (err && err.message) {
-          var mcErrorMessage =
-            '<p class="error" style="color: red">' + err.message + '</p>';
-          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(
-            mcErrorMessage
-          );
+          var mcErrorMessage = '<p class="error" style="color: red">' + err.message + '</p>';
+          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
         }
         $('#payment').unblock();
       },

@@ -27,7 +27,7 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
 }
 
 // Ajax call to get the merchant API Key
-function mc_get_merch_key()
+function wc_precisionpay_get_merch_key()
 {
   if (!class_exists('WC_PrecisionPay')) return;
 
@@ -35,8 +35,8 @@ function mc_get_merch_key()
   $mcInstance->get_api_key();
 }
 
-add_action('wp_ajax_mc_get_merch_key', 'mc_get_merch_key');
-add_action('wp_ajax_nopriv_mc_get_merch_key', 'mc_get_merch_key');
+add_action('wp_ajax_wc_precisionpay_get_merch_key', 'wc_precisionpay_get_merch_key');
+add_action('wp_ajax_nopriv_wc_precisionpay_get_merch_key', 'wc_precisionpay_get_merch_key');
 
 /**
  * Add the gateway to WC Available Gateways
@@ -53,7 +53,7 @@ function wc_precisionpay_add_to_gateways($gateways)
 add_filter('woocommerce_payment_gateways', 'wc_precisionpay_add_to_gateways');
 
 /**
- * PrecisoinPay Payment Gateway
+ * PrecisionPay Payment Gateway
  *
  * Provides direct bank payments easily.
  * We load it later to ensure WC is loaded first since we're extending it.
@@ -64,92 +64,116 @@ add_filter('woocommerce_payment_gateways', 'wc_precisionpay_add_to_gateways');
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
-add_action('plugins_loaded', 'wc_gateway_precisionpay_init', 11);
+add_action('plugins_loaded', 'wc_precisionpay_init', 11);
 
-function wc_gateway_precisionpay_init()
+function wc_precisionpay_init()
 {
   if (!class_exists('WC_PrecisionPay')) :
     define('WC_PRECISIONPAY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('WC_PRECISIONPAY_VERSION', '3.2.0');
-    define('PRECISION_PAY_BRAND_COLOR', '#F15A29');
-    define('PRECISION_PAY_TITLE', __('PrecisionPay', 'wc-gateway-precisionpay'));
-    define('PRECISION_PAY_BUTTON_TITLE', __('Authorize Payment'));
-    define('ERROR_MESSAGE_EXPIRED_TOKEN', __('Your PrecisinPay token expired, please log back in again'));
-    define('ERROR_MESSAGE_EXPIRED_PLAID_TOKEN', __('Your account authorization has expired, authorizations expire after 30 minutes'));
-
-    // Session constants
-    define('SESSION_STORAGE_PRECISION_PAY', 'mcPrecisionPayData');
-    define('SESSION_STORAGE_PLAID', 'mcPlaidData');
-
-    // Plaid Environments
-    define('PLAID_ENV_SANDBOX', 'sandbox');
-    define('PLAID_ENV_PRODUCTION', 'production');
-
-    // API URLs
-    define('API_URL_PROD', 'https://api.myprecisionpay.com/api');
-    define('API_URL_STAGING', 'https://staging.mymakecents.com/api');
-    define('API_URL_LOCAL', 'http://localhost:9000/api');
-
-    // Checkout portal URLs
-    define('CHECKOUT_PORTAL_URL_PROD', 'https://checkout.myprecisionpay.com');
-    define('CHECKOUT_PORTAL_URL_STAGING', 'https://staging-checkout.mymakecents.com');
-    define('CHECKOUT_PORTAL_URL_LOCAL', 'http://localhost:5173'); // 'http://127.0.0.1:5173'
-
-    // Environments
-    define('PRECICSION_PAY_ENV_PROD', 'production');
-    define('PRECICSION_PAY_ENV_STAGING', 'staging');
-    define('PRECICSION_PAY_ENV_LOCAL', 'local');
-
-    // ** Set the environment - Everything gets set from here ** //
-    define('PRECICSION_PAY_ENV', PRECICSION_PAY_ENV_PROD);
-
 
     class WC_PrecisionPay extends WC_Payment_Gateway
     {
+      const PRECISION_PAY_BRAND_COLOR = '#F15A29';
+      const PRECISION_PAY_TITLE = 'PrecisionPay';
+      const ERROR_MESSAGE_EXPIRED_TOKEN = 'Your PrecisionPay token expired, please log back in again';
+      const ERROR_MESSAGE_EXPIRED_PLAID_TOKEN = 'Your account authorization has expired, authorizations expire after 30 minutes';
+
+      // Session constants
+      const SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
+      const SESSION_STORAGE_PLAID = 'mcPlaidData';
+
+      // Plaid Environments
+      const PLAID_ENV_SANDBOX = 'sandbox';
+      const PLAID_ENV_PRODUCTION = 'production';
+
+      // PrecisionPay Environments
+      const PP_ENV_SANDBOX = 'sandbox';
+      const PP_ENV_PRODUCTION = 'live';
+
+
+      // API URLs
+      const API_URL_PROD = 'https://api.myprecisionpay.com/api';
+      const API_URL_STAGING = 'https://staging.mymakecents.com/api';
+      const API_URL_LOCAL = 'http://localhost:9000/api';
+
+      // Checkout portal URLs
+      const CHECKOUT_PORTAL_URL_PROD = 'https://checkout.myprecisionpay.com';
+      const CHECKOUT_PORTAL_URL_STAGING = 'https://staging-checkout.mymakecents.com';
+      const CHECKOUT_PORTAL_URL_LOCAL = 'http://localhost:5173';
+
+      // Environments
+      const PRECICSION_PAY_ENV_PROD = 'production';
+      const PRECICSION_PAY_ENV_STAGING = 'staging';
+      const PRECICSION_PAY_ENV_LOCAL = 'local';
+
+      // ** Set the environment - Everything gets set from here ** //
+      const PRECICSION_PAY_ENV = self::PRECICSION_PAY_ENV_PROD;
+
+      // Class Variables
+      public $id;
+      public $icon;
+      public $has_fields;
+      public $method_title;
+      public $method_description;
+      public $title;
+      public $description;
+      public $enabled;
+      private $logo_mark;
+      private $loading_icon;
+      private $loading_icon_long;
+      private $brand_title;
+      private $button_title;
+      private $enableTestMode;
+      private $env;
+      private $plaid_env;
+      private $api_key;
+      private $api_secret;
+      private $hasAPIKeys;
+      private $api_key_header;
+      private $api_url;
+      private $checkout_url;
+
       public function __construct()
       {
         // URLs by environment
-        $current_api_url = API_URL_PROD;
-        $current_checkout_portal_url = CHECKOUT_PORTAL_URL_PROD;
-        switch (PRECICSION_PAY_ENV) {
-          case PRECICSION_PAY_ENV_PROD:
+        $current_api_url = self::API_URL_PROD;
+        $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_PROD;
+        switch (self::PRECICSION_PAY_ENV) {
+          case self::PRECICSION_PAY_ENV_PROD:
             break;
-          case PRECICSION_PAY_ENV_STAGING:
-            $current_api_url = API_URL_STAGING;
-            $current_checkout_portal_url = CHECKOUT_PORTAL_URL_STAGING;
+          case self::PRECICSION_PAY_ENV_STAGING:
+            $current_api_url = self::API_URL_STAGING;
+            $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_STAGING;
             break;
-          case PRECICSION_PAY_ENV_LOCAL:
-            $current_api_url = API_URL_LOCAL;
-            $current_checkout_portal_url = CHECKOUT_PORTAL_URL_LOCAL;
+          case self::PRECICSION_PAY_ENV_LOCAL:
+            $current_api_url = self::API_URL_LOCAL;
+            $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_LOCAL;
             break;
         }
 
-        // Define plugin variables
         $this->id                  = 'wc_gateway_precisionpay';
         $this->icon                = WC_PRECISIONPAY_PLUGIN_URL . '/assets/img/precisionpay_logo_2x.png';
         $this->logo_mark           = WC_PRECISIONPAY_PLUGIN_URL . '/assets/img/logo_mark_white.svg';
         $this->loading_icon        = WC_PRECISIONPAY_PLUGIN_URL . '/assets/img/pp_loading_screen_300.png';
         $this->loading_icon_long   = WC_PRECISIONPAY_PLUGIN_URL . '/assets/img/pp_loading_screen_w_text.png';
         $this->has_fields          = true;
-        $this->method_title        = PRECISION_PAY_TITLE;
+        $this->method_title        = self::PRECISION_PAY_TITLE;
         $this->method_description  = __('Welcome to PrecisionPay, the Seconds Amendment payments company.<br />If you already have a merchant account, enter your keys below. If not, visit myprecisionpay.com to apply for a merchant account.', 'wc-gateway-precisionpay');
-        $this->brand_title         = PRECISION_PAY_TITLE;
-        $this->title               = PRECISION_PAY_TITLE;
+        $this->brand_title         = self::PRECISION_PAY_TITLE;
+        $this->title               = self::PRECISION_PAY_TITLE;
+        $this->button_title        = __('Authorize Payment', 'wc-gateway-precisionpay');
         $this->description         = __('Liberate your Second Amendment purchases with our fast, secure and private payment service. It\'s free, and no membership required!', 'wc-gateway-precisionpay');
         $this->enabled             = $this->get_option('enabled');
         $this->enableTestMode      = 'yes' === $this->get_option('enableTestMode'); // Checkbox comes in as yes if checked
-        $this->env                 = $this->enableTestMode ? PLAID_ENV_SANDBOX : PLAID_ENV_PRODUCTION;
+        $this->env                 = $this->enableTestMode ? self::PP_ENV_SANDBOX : self::PP_ENV_PRODUCTION;
+        $this->plaid_env           = $this->enableTestMode ? self::PLAID_ENV_SANDBOX : self::PLAID_ENV_PRODUCTION;
         $this->api_key             = $this->get_option('api_key');
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
         $this->api_key_header      = json_encode(array('apiKey'    => $this->api_key, 'apiSecret' => $this->api_secret));
         $this->api_url             = $current_api_url;
         $this->checkout_url        = $current_checkout_portal_url;
-        // $this->title           = $this->get_option('title');
-        // $description           = $this->get_option('description');
-        // $this->description     = isset($description) ? $description : '';
-        // $this->instructions    = $this->get_option('instructions', $this->description);
-        // $this->buttonColor     = $this->get_option('buttonColor');
 
         // Admin actions
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
@@ -221,7 +245,7 @@ function wc_gateway_precisionpay_init()
         return '
         <div class="precisionpay-settings-page-header">
             <div class="top-section">
-              <img alt="PrecisionPay" class="precisionpay-logo" width="380" src="' . WC_PRECISIONPAY_PLUGIN_URL . '/assets/img/precisionpay_logo_2x.png"/>
+              <img alt="PrecisionPay" class="precisionpay-logo" width="380" src="' . WC_PRECISIONPAY_PLUGIN_URL . $this->icon . '"/>
               <h4 class="precisionpay-tagline">' . __('Fast, Secure, Payments, for the Second Amendment Community.', 'wc-gateway-precisionpay') . '</h4>
               <a class="button" target="_blank" href="mailto:support@myprecisionpay.com">'
           . __('Get Help', 'wc-gateway-precisionpay') .
@@ -236,17 +260,17 @@ function wc_gateway_precisionpay_init()
           ';
 
         // TODO: add these links once we have the corresponding pages
-        //     <a class="button" target="_blank" href="https://woocommerce.com/document/woocommerce-precisionpay-payments/">'
+        //     <a class="button" target="_blank" href="https://myprecisionpay.com/document/woocommerce-precisionpay/">'
         // . __('Documentation', 'wc-gateway-precisionpay') .
         // '</a>
-        //     <a class="button" target="_blank" href="https://woocommerce.com/document/woocommerce-precisionpay-payments/#get-help">'
+        //     <a class="button" target="_blank" href="https://myprecisionpay.com/document/woocommerce-precisionpay/#get-help">'
         // . __('Get Help', 'wc-gateway-precisionpay') .
         // '</a>
         //     <span class="precisionpay-right-align">
-        //       <a target="_blank" href="https://woocommerce.com/feature-requests/woocommerce-precisionpay-payments/">'
+        //       <a target="_blank" href="https://myprecisionpay.com/feature-requests/woocommerce-precisionpay/">'
         // . __('Request a feature', 'wc-gateway-precisionpay') .
         // '</a>
-        //       <a target="_blank" href="https://github.com/woocommerce/woocommerce-precisionpay-payments/issues/new?assignees=&labels=type%3A+bug&template=bug_report.md">'
+        //       <a target="_blank" href="https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay/issues/new?assignees=&labels=type%3A+bug&template=bug_report.md">'
         // . __('Submit a bug', 'wc-gateway-precisionpay') .
         // '</a>
       }
@@ -312,35 +336,6 @@ function wc_gateway_precisionpay_init()
             'title'       => 'API Secret',
             'type'        => 'password'
           ),
-          // 'title' => array(
-          //   'title'       => __('Title', 'wc-gateway-precisionpay'),
-          //   'type'        => 'text',
-          //   'description' => __('This controls the title for the payment method the customer sees during checkout.', 'wc-gateway-precisionpay'),
-          //   'default'     => __('PrecisionPay', 'wc-gateway-precisionpay'),
-          //   'desc_tip'    => true,
-          // ),
-          // 'description' => array(
-          //   'title'       => __('Description', 'wc-gateway-precisionpay'),
-          //   'type'        => 'textarea',
-          //   'description' => __('Payment method description that the customer will see on your checkout.', 'wc-gateway-precisionpay'),
-          //   'default'     => __('Fast, Secure, Payments, no account necessary', 'wc-gateway-precisionpay'),
-          //   'desc_tip'    => true,
-          // ),
-          // 'instructions' => array(
-          //   'title'       => __('Instructions', 'wc-gateway-precisionpay'),
-          //   'type'        => 'textarea',
-          //   'description' => __('Instructions that will be added to the thank you page and emails.', 'wc-gateway-precisionpay'),
-          //   'default'     => '',
-          //   'desc_tip'    => true,
-          // ),
-          // 'buttonColor' => array(
-          //   'title'       => __('Button Color', 'wc-gateway-precisionpay'),
-          //   'type'        => 'text',
-          //   'description' => __('Set the color of the button the user will click to register with PrecisionPay', 'wc-gateway-precisionpay'),
-          //   'default'     => '#44ddee',
-          //   'desc_tip'    => true,
-          //   'class'       => 'mc-button-color-field',
-          // ),
         ));
       }
 
@@ -389,34 +384,30 @@ function wc_gateway_precisionpay_init()
         // $buttonColorDefault = $this->buttonColor ? $this->buttonColor : '';
         // $styleButtonBackground = $this->buttonColor ? ' background: ' . $this->buttonColor . ';' : '';
 
-        // $is_test_mode = $this->enableTestMode ? 'true' : 'false';
         // I will echo the form, but we could also close PHP tags and print it directly in HTML
         echo '<fieldset id="wc-' . esc_attr($this->id) . '-mc-form" class="wc-precisionpay-form wc-payment-form" style="background:transparent;">
                 <div style="display: none;">
                   <input name="precisionpay_public_token" id="precisionpay_public_token" type="hidden">
                   <input name="precisionpay_account_id" id="precisionpay_account_id" type="hidden">
-                  <input name="precisionpay_bank_name" id="precisionpay_bank_name" type="hidden">
-                  <input name="precisionpay_account_subtype" id="precisionpay_account_subtype" type="hidden">
                   <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden">
                   <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden">
                   <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden">
                 </div>
-                <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: ' . PRECISION_PAY_BRAND_COLOR . ';"
-                ><img src="' . $this->logo_mark . '" alt="PrecisionPay logo mark">' . PRECISION_PAY_BUTTON_TITLE . '</button>
+                <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: ' . self::PRECISION_PAY_BRAND_COLOR . ';"
+                ><img src="' . $this->logo_mark . '" alt="PrecisionPay logo mark">' . $this->button_title . '</button>
                 <div class="clear"></div>
                 <script type="text/javascript">
                   var mcPaymentGatewayNonce = "' . $nonce . '";
                   var ajaxUrl = "' . admin_url('admin-ajax.php') . '";
                   var orderAmount = "' . $order_amount . '";
-                  var errorMessageTokenExpired = "' . ERROR_MESSAGE_EXPIRED_TOKEN . '";
-                  var errorMessagePlaidTokenExpired = "' . ERROR_MESSAGE_EXPIRED_PLAID_TOKEN . '";
-                  var defaultButtonBg = "' . PRECISION_PAY_BRAND_COLOR . '";
-                  var defaultButtonTitle = "' . PRECISION_PAY_BUTTON_TITLE . '";
+                  var errorMessageTokenExpired = "' . self::ERROR_MESSAGE_EXPIRED_TOKEN . '";
+                  var errorMessagePlaidTokenExpired = "' . self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN . '";
+                  var defaultButtonBg = "' . self::PRECISION_PAY_BRAND_COLOR . '";
+                  var defaultButtonTitle = "' . $this->button_title . '";
                   var precisionpayLogoMark = "' . $this->logo_mark . '";
                   var precisionpayLoadingImg = "' . $this->loading_icon . '";
                   var precisionpayLoadingImgLong = "' . $this->loading_icon_long . '";
-                  // var precisionpayIsTestMode = ' . $is_test_mode . ';
-                  var precisionpayPlaidEnv = "' . $this->env . '";
+                  var precisionpayPlaidEnv = "' . $this->plaid_env . '";
                   var checkoutPortalEnvURL = "' . $this->checkout_url . '";
                 </script>
                 <script src="' . WC_PRECISIONPAY_PLUGIN_URL . '/assets/js/pp-loader.js"></script>
@@ -483,11 +474,6 @@ function wc_gateway_precisionpay_init()
         if (!is_ssl()) {
           wp_enqueue_script('mc_admin_script_ssl', WC_PRECISIONPAY_PLUGIN_URL . '/assets/js/admin-script-ssl.js');
         }
-
-        // Add script for the color picker - UPDATE: disabling this for now as we're upgrading our branding
-        // wp_enqueue_style('wp-color-picker');
-        // wp_enqueue_script('wp-color-picker');
-        // wp_enqueue_script('mc_admin_script_general', WC_PRECISIONPAY_PLUGIN_URL . '/assets/js/admin-script-general.js');
       }
 
       /**
@@ -495,7 +481,7 @@ function wc_gateway_precisionpay_init()
        */
       public function payment_scripts()
       {
-        // we need JavaScript to process a token only on cart/checkout pages, right?
+        // We need JavaScript to process a token only on cart/checkout pages, right?
         if (!is_cart() && !is_checkout() && !isset($_GET['pay_for_order'])) {
           return;
         }
@@ -524,7 +510,7 @@ function wc_gateway_precisionpay_init()
         global $woocommerce;
         $order = new WC_Order($order_id);
         $payResponse_body = null;
-        $precisionpayCheckoutToken = $_POST['precisionpay_checkout_token'];
+        $precisionpayCheckoutToken = sanitize_text_field($_POST['precisionpay_checkout_token']);
 
         if ($precisionpayCheckoutToken) {
           $payResponse_body = $this->pay_with_precisionpay($order, $order_id, $precisionpayCheckoutToken);
@@ -551,9 +537,9 @@ function wc_gateway_precisionpay_init()
             if ($responseErrorMessage) {
               if ($responseErrorMessage === 'PrecisionPay token invalid') {
                 // Handle expired token
-                $errorNotice = ERROR_MESSAGE_EXPIRED_TOKEN;
-              } else if ($responseErrorMessage === ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
-                $errorNotice = ERROR_MESSAGE_EXPIRED_PLAID_TOKEN;
+                $errorNotice = __(self::ERROR_MESSAGE_EXPIRED_TOKEN, 'wc-gateway-precisionpay');
+              } else if ($responseErrorMessage === self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
+                $errorNotice = __(self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN, 'wc-gateway-precisionpay');
               } else {
                 $errorNotice = '';
                 if (is_array($responseErrorMessage)) {
@@ -573,8 +559,18 @@ function wc_gateway_precisionpay_init()
         }
       }
 
+      private function validate_hidden_field($field, $message = 'Invalid checkout token.')
+      {
+        if (!preg_match("/^[0-9a-zA-Z\-]+$/", $field)) {
+          throw new Exception(__('Error processing payment. ' . $message, 'wc-gateway-precisionpay'));
+        }
+      }
+
       private function pay_with_precisionpay($order, $order_id, $precisionpayCheckoutToken)
       {
+        // Validate field first
+        $this->validate_hidden_field($precisionpayCheckoutToken);
+
         $orderNumber = $this->get_order_number($order, $order_id);
         $paymentData = array(
           'precisionPayToken' => $precisionpayCheckoutToken,
@@ -601,18 +597,24 @@ function wc_gateway_precisionpay_init()
 
       private function pay_with_plaid($order, $order_id)
       {
-        $publicToken = $_POST['precisionpay_public_token'];
-        $accountId = $_POST['precisionpay_account_id'];
-        $precisionpay_user_id = $_POST['precisionpay_plaid_user_id'];
-        $precisionpay_registered_user_id = $_POST['precisionpay_registered_user_id'];
-
-        // TODO: do we need these two anymore? Possibly remove
-        $bankName = $_POST['precisionpay_bank_name'];
-        $accountSubtype = $_POST['precisionpay_account_subtype'];
+        $publicToken = sanitize_text_field($_POST['precisionpay_public_token']);
+        $accountId = sanitize_text_field($_POST['precisionpay_account_id']);
+        $precisionpay_user_id = sanitize_text_field($_POST['precisionpay_plaid_user_id']);
+        $precisionpay_registered_user_id = sanitize_text_field($_POST['precisionpay_registered_user_id']);
 
         // Make sure the plaid link returned what we needed
-        if (!$publicToken || !$accountId || !$bankName || !$accountSubtype || !$precisionpay_user_id) {
+        if (!$publicToken || !$accountId || !$precisionpay_user_id) {
           throw new Exception(__('Your bank account is not linked. Please link your account.', 'wc-gateway-precisionpay'));
+        }
+
+        // validate the input:
+        $this->validate_hidden_field($publicToken, 'Invalid token.');
+        $this->validate_hidden_field($accountId, 'Invalid id.');
+        $this->validate_hidden_field($precisionpay_user_id, 'Invalid Plaid user id.');
+
+        // This is optional and only gets set if the customer logs into our Customer Portal but does one-time-pay with Plaid
+        if ($precisionpay_registered_user_id) {
+          $this->validate_hidden_field($precisionpay_registered_user_id, 'Invalid PrecisionPay Account.');
         }
 
         $orderNumber = $this->get_order_number($order, $order_id);
@@ -625,7 +627,7 @@ function wc_gateway_precisionpay_init()
           'business_name'    => $order->get_billing_company(), //? $order->get_billing_company() : 'PrecisionPay Default',
           'email'            => $order->get_billing_email(),
           'one_time_user_id' => $precisionpay_user_id, // string
-          'external_user_id' => $precisionpay_registered_user_id,
+          'external_user_id' => $precisionpay_registered_user_id, // We need to pass this, but it will usually be an empty string
           'amount'           => floatval($order->get_total()), // number (int or decimal)
           'order'            => strval($orderNumber), // <- Needs to come in as a string
           'env'              => $this->env, // Lets API know if we are in sandbox or live mode
@@ -683,15 +685,12 @@ function wc_gateway_precisionpay_init()
        */
       public function thankyou_page()
       {
-        // if ($this->instructions) {
-        //   echo wpautop(wptexturize($this->instructions));
-        // }
         echo '
           <script type="text/javascript">
           function completePrecisionPayExperience($) {
             // Remove session PrecisionPay session storage variables
-            sessionStorage.removeItem("' . SESSION_STORAGE_PRECISION_PAY . '");
-            sessionStorage.removeItem("' . SESSION_STORAGE_PLAID . '");
+            sessionStorage.removeItem("' . self::SESSION_STORAGE_PRECISION_PAY . '");
+            sessionStorage.removeItem("' . self::SESSION_STORAGE_PLAID . '");
           }
 
           jQuery(document).ready(function completePrecisionPay() {
@@ -700,13 +699,6 @@ function wc_gateway_precisionpay_init()
           </script>
         ';
       }
-
-      /**
-       * In case you need a webhook, like PayPal IPN etc
-       */
-      // public function webhook()
-      // {
-      // }
 
       /**
        * Add content to the WC emails.
