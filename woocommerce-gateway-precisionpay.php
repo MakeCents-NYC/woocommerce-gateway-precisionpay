@@ -4,7 +4,7 @@
  * Plugin Name:          WooCommerce PrecisionPay
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your store with PrecisionPay.
- * Version:              3.2.0
+ * Version:              3.2.0-Local
  * Requires at least:    5.9
  * Requires PHP:         7.2
  * WC requires at least: 3.9
@@ -103,12 +103,12 @@ function wc_precisionpay_init()
       const CHECKOUT_PORTAL_URL_LOCAL = 'http://localhost:5173';
 
       // Environments
-      const PRECICSION_PAY_ENV_PROD = 'production';
-      const PRECICSION_PAY_ENV_STAGING = 'staging';
-      const PRECICSION_PAY_ENV_LOCAL = 'local';
+      const PRECISION_PAY_ENV_PROD = 'production';
+      const PRECISION_PAY_ENV_STAGING = 'staging';
+      const PRECISION_PAY_ENV_LOCAL = 'local';
 
       // ** Set the environment - Everything gets set from here ** //
-      const PRECICSION_PAY_ENV = self::PRECICSION_PAY_ENV_PROD;
+      const PRECISION_PAY_ENV = self::PRECISION_PAY_ENV_LOCAL;
 
       // Class Variables
       public $id;
@@ -139,14 +139,14 @@ function wc_precisionpay_init()
         // URLs by environment
         $current_api_url = self::API_URL_PROD;
         $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_PROD;
-        switch (self::PRECICSION_PAY_ENV) {
-          case self::PRECICSION_PAY_ENV_PROD:
+        switch (self::PRECISION_PAY_ENV) {
+          case self::PRECISION_PAY_ENV_PROD:
             break;
-          case self::PRECICSION_PAY_ENV_STAGING:
+          case self::PRECISION_PAY_ENV_STAGING:
             $current_api_url = self::API_URL_STAGING;
             $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_STAGING;
             break;
-          case self::PRECICSION_PAY_ENV_LOCAL:
+          case self::PRECISION_PAY_ENV_LOCAL:
             $current_api_url = self::API_URL_LOCAL;
             $current_checkout_portal_url = self::CHECKOUT_PORTAL_URL_LOCAL;
             break;
