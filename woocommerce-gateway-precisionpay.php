@@ -4,7 +4,7 @@
  * Plugin Name:          WooCommerce PrecisionPay
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your store with PrecisionPay.
- * Version:              3.2.0-Local
+ * Version:              3.2.0
  * Requires at least:    5.9
  * Requires PHP:         7.2
  * WC requires at least: 3.9
@@ -108,7 +108,7 @@ function wc_precisionpay_init()
       const PRECISION_PAY_ENV_LOCAL = 'local';
 
       // ** Set the environment - Everything gets set from here ** //
-      const PRECISION_PAY_ENV = self::PRECISION_PAY_ENV_LOCAL;
+      const PRECISION_PAY_ENV = self::PRECISION_PAY_ENV_PROD;
 
       // Class Variables
       public $id;
