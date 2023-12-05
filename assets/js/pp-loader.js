@@ -1,9 +1,5 @@
-function setPrecisionPayLoader($, ppLoadingImg, ppLoadingImgLong) {
-  const ppLoadingFullPng = $('<img class="precisionPayLoadingFullPNG2" src=' + ppLoadingImgLong + '" />');
-
-  const ppRadioButton = document.getElementById(
-    'payment_method_wc_gateway_precisionpay'
-  );
+function setPrecisionPayLoader($, loadingImg, loadingImgLong) {
+  const ppRadioButton = document.getElementById('payment_method_wc_gateway_precisionpay');
 
   if (ppRadioButton.checked === true) {
     // check if spinner style doesn't exist
@@ -25,7 +21,7 @@ function setPrecisionPayLoader($, ppLoadingImg, ppLoadingImgLong) {
           -moz-animation: none;
           animation: none;
           background-image: url('` +
-        ppLoadingImg +
+        loadingImg +
         `') !important;
           background-position: center center;
           background-size: cover;
@@ -40,20 +36,18 @@ function setPrecisionPayLoader($, ppLoadingImg, ppLoadingImgLong) {
       customLoaderBlock.className = 'precisionPayCustomLoader';
       // const spinnerStyle = document.createElement('style');
       // spinnerStyle.innerText = spinnerStyles;
-      customLoaderBlock.innerHTML =
-        '<style type="text/css">' + spinnerStyles + '</style>';
+      customLoaderBlock.innerHTML = '<style type="text/css">' + spinnerStyles + '</style>';
       document.body.append(customLoaderBlock);
     }
     setTimeout(() => {
-        $('.woocommerce .blockUI.blockOverlay').append(ppLoadingFullPng)
-        $('.woocommerce .blockUI.blockOverlay').append(
-          `
+      $('.woocommerce .blockUI.blockOverlay').append(
+        `
             <style type="text/css">
             body .woocommerce .blockUI.blockOverlay:before,
             body .woocommerce .loader:before {
               background-image: url('` +
-              ppLoadingImgLong +
-              `') !important;
+          loadingImgLong +
+          `') !important;
             }
             .woocommerce .blockUI.blockOverlay .precisionPayLoadingFullPNG {
               width: 350px;
@@ -70,7 +64,7 @@ function setPrecisionPayLoader($, ppLoadingImg, ppLoadingImgLong) {
             }
             </style>
             `
-        );
+      );
     }, 100);
   } else {
     // if using another payment method after attempting and failing with

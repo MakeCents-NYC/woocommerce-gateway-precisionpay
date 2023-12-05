@@ -1,5 +1,4 @@
-function initPrecisionPayPaymentGateway($) {
-  // *** See woocommerce-gateway-precisinpay.php for additional js variables
+function usePrecisionPayPaymentGateway($) {
   // ONLY RUN IF PLAID IS AVAILABLE
   if (typeof Plaid === 'undefined') {
     console.log('...MISSING PLAID...');
@@ -8,12 +7,22 @@ function initPrecisionPayPaymentGateway($) {
 
   var SESSION_STORAGE_PLAID = 'mcPlaidData';
   var SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
-  var checkoutPortalURL = checkoutPortalEnvURL; // from woocommerce-gateway-precisionpay.php
-  var ppLoadingImg = precisionpayLoadingImg; // from woocommerce-gateway-precisionpay.php
-  var ppLoadingImgLong = precisionpayLoadingImgLong; // from woocommerce-gateway-precisionpay.php
-  var mc_merchantKey = '';
 
-  init();
+  // From woocommerce-gateway-precisionpay.php
+  var nonce = precisionpay_data.nonce;
+  var ajaxUrl = precisionpay_data.ajaxUrl;
+  var orderAmount = precisionpay_data.orderAmount;
+  var errorMessageTokenExpired = precisionpay_data.errorMessageTokenExpired;
+  var errorMessagePlaidTokenExpired = precisionpay_data.errorMessagePlaidTokenExpired;
+  var defaultButtonBg = precisionpay_data.defaultButtonBg;
+  var defaultButtonTitle = precisionpay_data.defaultButtonTitle;
+  var logoMark = precisionpay_data.logoMark;
+  var loadingImg = precisionpay_data.loadingImg;
+  var loadingImgLong = precisionpay_data.loadingImgLong;
+  var plaidEnv = precisionpay_data.plaidEnv;
+  var checkoutPortalURL = precisionpay_data.checkoutPortalURL;
+
+  var mc_merchantKey = '';
 
   function init() {
     // IF ALREADY REGISTERED OR LINKED BUT NOT YET REGISTERED SET BUTTON AS LINKED
@@ -30,7 +39,7 @@ function initPrecisionPayPaymentGateway($) {
 
     // We are now listening for submit of the form to add our own loader if user is using PrecisionPay
     $('.woocommerce-checkout').on('submit', function () {
-      setPrecisionPayLoader($, ppLoadingImg, ppLoadingImgLong);
+      setPrecisionPayLoader($, loadingImg, loadingImgLong);
     }); // .addEventListener('submit', setLoader);
 
     // launch checkout portal on PP button click
@@ -64,12 +73,7 @@ function initPrecisionPayPaymentGateway($) {
 
   function resetButtonUI() {
     $('#precisionpay-link-button')
-      .html(
-        '<img src="' +
-          precisionpayLogoMark +
-          '" alt="PrecisionPay logo mark"></img>' +
-          defaultButtonTitle
-      )
+      .html('<img src="' + logoMark + '" alt="PrecisionPay logo mark"></img>' + defaultButtonTitle)
       .css({
         backgroundColor: defaultButtonBg,
       })
@@ -166,9 +170,7 @@ function initPrecisionPayPaymentGateway($) {
       <div class="mc-payment-portal mc-overlay">
         <iframe class="mc-payment-window" src="${checkoutPortalURL}/checkout-login/${encodeURI(
         merchantKey
-      )}/amount/${encodeURI(
-        amount
-      )}/env/${precisionpayPlaidEnv}" title="Log in to PrecisionPay"></iframe>
+      )}/amount/${encodeURI(amount)}/env/${plaidEnv}" title="Log in to PrecisionPay"></iframe>
       </div>
       `);
       var mcPaymentStyles = `
@@ -204,7 +206,7 @@ function initPrecisionPayPaymentGateway($) {
 
   function getKey() {
     let data = {
-      nonce: mcPaymentGatewayNonce,
+      nonce: nonce,
       action: 'wc_precisionpay_get_merch_key',
     };
 
@@ -247,9 +249,8 @@ function initPrecisionPayPaymentGateway($) {
       },
     });
   }
-}
 
-jQuery(document).ready(function startPrecisionPay() {
-  // We only want to run our code once plaid is loaded
-  initPrecisionPayPaymentGateway(jQuery);
-});
+  return {
+    init: init,
+  };
+}
