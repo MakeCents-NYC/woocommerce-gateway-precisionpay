@@ -1,0 +1,29 @@
+#precisionpay-link-button {
+  color: white;
+  border-radius: 26px;
+  font-size: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transition: all 0.3s;
+}
+#precisionpay-link-button:hover {
+  filter: brightness(125%);
+}
+#precisionpay-link-button img {
+  width: 24px;
+  height: 30px;
+  margin-right: 8px;
+  float: none !important;
+}
+#precisionpay-login-section {
+  padding: 10px 0;
+  font-size: 16px;
+}
+#precisionpay-login-section a {
+  color: #f15a29;
+}
+.wc-precisionpay-form .clear {
+  height: 0;
+  overflow: hidden;
+}

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Plugin Name:          WooCommerce PrecisionPay
+ * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
- * Description:          Accept online bank payments in your store with PrecisionPay.
- * Version:              3.2.0-Local
+ * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
+ * Version:              3.2.0
  * Requires at least:    5.9
  * Requires PHP:         7.2
  * WC requires at least: 3.9
@@ -70,6 +70,7 @@ function wc_precisionpay_init()
 {
   if (!class_exists('WC_PrecisionPay')) :
     define('WC_PRECISIONPAY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
+    define('WC_PRECISIONPAY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
     define('WC_PRECISIONPAY_VERSION', '3.2.0');
 
     class WC_PrecisionPay extends WC_Payment_Gateway
@@ -108,7 +109,7 @@ function wc_precisionpay_init()
       const PRECISION_PAY_ENV_LOCAL = 'local';
 
       // ** Set the environment - Everything gets set from here ** //
-      const PRECISION_PAY_ENV = self::PRECISION_PAY_ENV_LOCAL;
+      const PRECISION_PAY_ENV = self::PRECISION_PAY_ENV_PROD;
 
       // Class Variables
       public $id;
@@ -176,6 +177,7 @@ function wc_precisionpay_init()
         $this->checkout_url        = $current_checkout_portal_url;
 
         // Admin actions
+        add_action('admin_init', array($this, 'add_privacy_message'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
 
         // Actions
@@ -191,6 +193,33 @@ function wc_precisionpay_init()
         // Load the settings.
         $this->init_form_fields();
         $this->init_settings();
+      }
+
+      /**
+       * Gets the privacy message for merchants
+       */
+      public function add_privacy_message()
+      {
+        if (!function_exists('wp_add_privacy_policy_content')) {
+          return;
+        }
+
+        $content = wpautop(
+          sprintf(
+            wp_kses(
+              __('By using this plugin, you consent to storage and use of personal data required to send and receive payments. <a href="%s" target="_blank">View the PrecisionPay Privacy Policy to see what you may want to include in your privacy policy.</a>', 'wc-gateway-precisionpay'),
+              array(
+                'a' => array(
+                  'href'   => array(),
+                  'target' => array(),
+                ),
+              )
+            ),
+            'https://www.myprecisionpay.com/privacy-policy'
+          )
+        );
+
+        wp_add_privacy_policy_content(WC_PRECISIONPAY_PLUGIN_NAME, $content);
       }
 
       /**
@@ -388,37 +417,6 @@ function wc_precisionpay_init()
                 <script src = "' . WC_PRECISIONPAY_PLUGIN_URL . '/assets/js/init.js"></script>
                 <div class="clear"><img class="precisionPayLoadingFullPNG" src="' . $this->loading_icon_long . '" /></div>
               </fieldset>
-              <style>
-                #precisionpay-link-button {
-                  color: white;
-                  border-radius: 26px;
-                  font-size: 18px;
-                  width: 100%;
-                  display: flex;
-                  justify-content: center;
-                  transition: all 0.3s;
-                }
-                #precisionpay-link-button:hover {
-                  filter: brightness(125%);
-                }
-                #precisionpay-link-button img {
-                  width: 24px;
-                  height: 30px;
-                  margin-right: 8px;
-                  float: none !important;
-                }
-                #precisionpay-login-section {
-                  padding: 10px 0;
-                  font-size: 16px;
-                }
-                #precisionpay-login-section a {
-                  color: #f15a29;
-                }
-                .wc-precisionpay-form .clear {
-                  height:0;
-                  overflow: hidden;
-                }
-              </style>
               ';
       }
 
@@ -455,7 +453,7 @@ function wc_precisionpay_init()
        */
       public function payment_scripts()
       {
-        // We need JavaScript to process a token only on cart/checkout pages, right?
+        // We only need to add styles and scripts on cart/checkout and pay-for-order pages
         if (!is_cart() && !is_checkout() && !isset($_GET['pay_for_order'])) {
           return;
         }
@@ -464,6 +462,9 @@ function wc_precisionpay_init()
         if ('no' === $this->enabled) {
           return;
         }
+
+        // Add styles
+        wp_enqueue_style('precisionpay-styles', WC_PRECISIONPAY_PLUGIN_URL . '/assets/css/main.css');
 
         // Require SSL unless the website is in a test mode
         if (!$this->enableTestMode && !is_ssl()) {
@@ -582,7 +583,7 @@ function wc_precisionpay_init()
       private function validate_hidden_field($field, $message = '')
       {
         if (!preg_match("/^[0-9a-zA-Z\-]+$/", $field)) {
-          $error_message = __('Error processing payment. ', 'wc-gateway-precisionpay') . $message;
+          $error_message = __('Error processing payment.', 'wc-gateway-precisionpay') . ' ' . $message;
           throw new Exception($error_message);
         }
       }
