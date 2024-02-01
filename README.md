@@ -1,6 +1,6 @@
-# WooCommerce Gateway PrecisionPay
+# PrecisionPay Payments for WooCommerce
 
-PrecisionPay payments for WooCommerce is the official PrecisionPay payment gateway for WooCommerce. This plugin uses Plaid (https://plaid.com/) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at myprecisionpay.com).
+PrecisionPay Payments for WooCommerce is the official PrecisionPay payment gateway for WooCommerce. This plugin uses Plaid (https://plaid.com/) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at myprecisionpay.com).
 
 ## Setup
 
