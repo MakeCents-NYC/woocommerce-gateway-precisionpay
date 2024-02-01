@@ -2,8 +2,8 @@
 Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, e-commerce, ecommerce
 Requires at least: 5.9
-Tested up to: 8.3
-Stable tag: 3.2.0
+Tested up to: 6.4
+Stable tag: 3.2.1
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -12,7 +12,7 @@ Accept online bank payments in your WooCommerce store with PrecisionPay.
 
 == Description ==
 
-PrecisionPay Payments for WooCommerce is the official PrecisionPay payment gateway for WooCommerce. This plugin uses Plaid ([https://plaid.com/](https://plaid.com/)) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at [myprecisionpay.com](myprecisionpay.com)).
+PrecisionPay Payments for WooCommerce is the official PrecisionPay payment gateway for WooCommerce. This plugin uses Plaid ([https://plaid.com/](https://plaid.com/)) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at [myprecisionpay.com](myprecisionpay.com)). View the PrecisionPay privacy policy [here](https://www.myprecisionpay.com/privacy-policy). View Plaid's privacy policy [here](https://plaid.com/legal/).
 
 = The benefits of using PrecisionPay =
 
@@ -77,11 +77,11 @@ No, however many of them will already have customer accounts. For those who don'
 
 == Changelog ==
 
-= 3.2.0 =
+= 3.2.1 =
 * First official release of the plugin!
 * Adds a WooCommerce payment gateway that allows users to pay with their PrecisionPay account or as a guest at checkout, or when paying for an invoice.
 
 == Upgrade Notice ==
 
-= 3.2.0 =
+= 3.2.1 =
 This is the first public version of PrecisionPay for WooCommerce and is the minimum requred to start accepting payments with the PrecisionPay network. (v1, v2, v3.0, and v3.1 were were still in an MVP stage and were private).

@@ -207,7 +207,7 @@ function usePrecisionPayPaymentGateway($) {
   function getKey() {
     let data = {
       nonce: nonce,
-      action: 'wc_precisionpay_get_merch_key',
+      action: 'prcsnpy_get_merch_key',
     };
 
     $('#payment').block({
