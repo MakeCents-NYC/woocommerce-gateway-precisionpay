@@ -14,6 +14,7 @@ function usePrecisionPayPaymentGateway($) {
   var orderAmount = precisionpay_data.orderAmount;
   var errorMessageTokenExpired = precisionpay_data.errorMessageTokenExpired;
   var errorMessagePlaidTokenExpired = precisionpay_data.errorMessagePlaidTokenExpired;
+  var errorMessageNoValidAccounts = precisionpay_data.errorMessageNoValidAccounts;
   var defaultButtonBg = precisionpay_data.defaultButtonBg;
   var defaultButtonTitle = precisionpay_data.defaultButtonTitle;
   var logoMark = precisionpay_data.logoMark;
@@ -51,8 +52,18 @@ function usePrecisionPayPaymentGateway($) {
         .find('li')
         .first()
         .text()
-        .replace(/(\n|\t)/gm, '');
-      if (errorText === errorMessageTokenExpired || errorText === errorMessagePlaidTokenExpired) {
+        .replace(/(\n|\t)/gm, ''); // For Older WooCommerce
+      if (!errorText) {
+        errorText = $('.is-error .wc-block-components-notice-banner__content')
+          .text()
+          .replace(/(\n|\t)/gm, ''); // For WooCommerce v8+
+      }
+      if (
+        errorText &&
+        (errorText === errorMessageTokenExpired ||
+          errorText === errorMessagePlaidTokenExpired ||
+          errorText === errorMessageNoValidAccounts)
+      ) {
         resetButtonUI();
         removePPDataFromHiddenField();
         sessionStorage.removeItem(SESSION_STORAGE_PRECISION_PAY);

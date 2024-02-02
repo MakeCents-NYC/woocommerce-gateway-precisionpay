@@ -79,6 +79,7 @@ function prcsnpy_init()
       const PRECISION_PAY_BRAND_COLOR = '#F15A29';
       const PRECISION_PAY_TITLE = 'PrecisionPay';
       const ERROR_MESSAGE_EXPIRED_PLAID_TOKEN = 'Your account authorization has expired, authorizations expire after 30 minutes';
+      const ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND = 'There are no valid checking or savings account(s) associated with this Item.';
 
       // Session constants
       const SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
@@ -482,6 +483,7 @@ function prcsnpy_init()
             'orderAmount' => $order_amount,
             'errorMessageTokenExpired' => __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce'),
             'errorMessagePlaidTokenExpired' => __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce'),
+            'errorMessageNoValidAccounts' => __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce'),
             'defaultButtonBg' => self::PRECISION_PAY_BRAND_COLOR,
             'defaultButtonTitle' => $this->button_title,
             'logoMark' => $this->logo_mark,
@@ -533,6 +535,8 @@ function prcsnpy_init()
                 $errorNotice = __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce');
               } else if ($responseErrorMessage === self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
                 $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
+              } else if ($responseErrorMessage === self::ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND) {
+                $errorNotice = __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce');
               } else {
                 $errorNotice = '';
                 if (is_array($responseErrorMessage)) {
