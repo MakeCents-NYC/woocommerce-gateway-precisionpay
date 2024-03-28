@@ -9,7 +9,7 @@ function usePrecisionPayPaymentGateway($) {
   var SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
 
   // From woocommerce-gateway-precisionpay.php
-  var nonce = precisionpay_data.nonce;
+  var nonce = precisionpay_data.precisionpay_nonce;
   var ajaxUrl = precisionpay_data.ajaxUrl;
   var orderAmount = precisionpay_data.orderAmount;
   var errorMessageTokenExpired = precisionpay_data.errorMessageTokenExpired;
@@ -217,7 +217,7 @@ function usePrecisionPayPaymentGateway($) {
 
   function getKey() {
     let data = {
-      nonce: nonce,
+      precisionpay_nonce: nonce,
       action: 'prcsnpy_get_merch_key',
     };
 

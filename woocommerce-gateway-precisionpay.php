@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.2.1
+ * Version:              3.3.0
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.4
@@ -61,7 +61,7 @@ add_filter('woocommerce_payment_gateways', 'prcsnpy_add_to_gateways');
  *
  * @class       PrecisionPay_Payments_For_WC
  * @extends     WC_Payment_Gateway
- * @version     3.2.1
+ * @version     3.3.0
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
@@ -72,7 +72,7 @@ function prcsnpy_init()
   if (!class_exists('PrecisionPay_Payments_For_WC')) :
     define('PRCSNPY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('PRCSNPY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
-    define('PRCSNPY_VERSION', '3.2.0');
+    define('PRCSNPY_VERSION', '3.3.0');
 
     class PrecisionPay_Payments_For_WC extends WC_Payment_Gateway
     {
@@ -120,6 +120,7 @@ function prcsnpy_init()
       private $api_secret;
       private $hasAPIKeys;
       private $api_key_header;
+      private $nonce;
       private $api_url;
       private $checkout_url;
 
@@ -145,6 +146,7 @@ function prcsnpy_init()
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
         $this->api_key_header      = json_encode(array('apiKey'    => $this->api_key, 'apiSecret' => $this->api_secret));
+        $this->nonce               = wp_create_nonce("mc_payment_gateway_nonce");;
         $this->api_url             = self::API_URL_PROD;
         $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
 
@@ -199,7 +201,7 @@ function prcsnpy_init()
        */
       public function get_api_key()
       {
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), "mc_payment_gateway_nonce")) {
+        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
           exit("SERVER VERIFICATION ERROR");
         }
 
@@ -237,7 +239,6 @@ function prcsnpy_init()
        */
       function admin_options()
       {
-        $this->render_admin_styles();
         $this->render_header();
         $this->render_settings();
       }
@@ -279,35 +280,44 @@ function prcsnpy_init()
 
       public function render_settings()
       {
-        echo '
-          <table class="form-table">' . $this->generate_settings_html($this->get_form_fields(), false) . '</table>
-        ';
-      }
-
-      public function render_admin_styles()
-      {
-        echo '
-          <style type="text/css">
-            .precisionpay-settings-page-header {
-              padding-top: 10px;
-            }
-
-            .precisionpay-settings-page-header .top-section {
-              display: flex;
-              gap: 15px;
-              align-items: center;
-              margin-bottom: 20px;
-            }
-
-            .precisionpay-tagline {
-              margin: 0;
-            }
-
-            .precisionpay-settings-page-header p {
-              font-size: 14px;
-            }
-          </style>
-        ';
+        echo '<table class="form-table">' . wp_kses(
+          $this->generate_settings_html($this->get_form_fields(), false),
+          array(
+            'tbody' => true,
+            'tr' => array(
+              'valign' => array()
+            ),
+            'th' => array(
+              'scope' => array(),
+              'class' => array()
+            ),
+            'label' => array(
+              'for' => array()
+            ),
+            'td' => array(
+              'class' => array()
+            ),
+            'fieldset' => true,
+            'legend' => array(
+              'class' => array()
+            ),
+            'span' => array(
+              'class' => array(),
+              'tabindex' => array(),
+              'aria-label' => array()
+            ),
+            'input' => array(
+              'class' => array(),
+              'type' => array(),
+              'name' => array(),
+              'id' => array(),
+              'style' => array(),
+              'value' => array(),
+              'checked' => array(),
+              'placeholder' => array()
+            ),
+          ),
+        ) . '</table>';
       }
 
       /**
@@ -375,22 +385,27 @@ function prcsnpy_init()
           echo wpautop(wp_kses_post($this->description));
         }
 
-        // For now we will echo the form, but we could also close PHP tags and print it directly in HTML
-        echo '<fieldset id="wc-' . esc_attr($this->id) . '-mc-form" class="wc-precisionpay-form wc-payment-form" style="background:transparent;">
-                <div style="display: none;">
-                  <input name="precisionpay_public_token" id="precisionpay_public_token" type="hidden">
-                  <input name="precisionpay_account_id" id="precisionpay_account_id" type="hidden">
-                  <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden">
-                  <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden">
-                  <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden">
-                </div>
-                <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: ' . esc_html(self::PRECISION_PAY_BRAND_COLOR) . ';"
-                ><img src="' . esc_url($this->logo_mark) . '" alt="PrecisionPay logo mark">' . esc_html($this->button_title) . '</button>
-                <div class="clear"></div>
-                <script src = "' . esc_url(PRCSNPY_PLUGIN_URL) . '/assets/js/init.js"></script>
-                <div class="clear"><img class="precisionPayLoadingFullPNG" src="' . esc_url($this->loading_icon_long) . '" /></div>
-              </fieldset>
-              ';
+?>
+        <fieldset id="wc-<?php echo esc_attr($this->id); ?>-mc-form" class="wc-precisionpay-form wc-payment-form" style="background:transparent;">
+          <div style="display: none;">
+            <input name="precisionpay_public_token" id="precisionpay_public_token" type="hidden" />
+            <input name="precisionpay_account_id" id="precisionpay_account_id" type="hidden" />
+            <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden" />
+            <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden" />
+            <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden" />
+            <input name="precisionpay_nonce" id="precisionpay_nonce" type="hidden" value="<?php echo esc_attr($this->nonce); ?>" />
+          </div>
+          <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: <?php echo esc_html(self::PRECISION_PAY_BRAND_COLOR); ?>;"><img src="<?php echo esc_url($this->logo_mark); ?>" alt="PrecisionPay logo mark" /><?php echo esc_html($this->button_title); ?></button>
+          <div class="clear"></div>
+          <div class="clear"><img class="precisionPayLoadingFullPNG" src="<?php echo esc_url($this->loading_icon_long); ?>" /></div>
+          <script type="text/javascript">
+            jQuery(function() {
+              var precisionPayPaymentGateway = usePrecisionPayPaymentGateway(jQuery);
+              precisionPayPaymentGateway.init();
+            });
+          </script>
+        </fieldset>
+<?php
       }
 
       /**
@@ -398,6 +413,10 @@ function prcsnpy_init()
        */
       public function validate_fields()
       {
+        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
+          exit("SERVER VERIFICATION ERROR");
+        }
+
         if (empty($_POST['precisionpay_public_token']) && empty($_POST['precisionpay_checkout_token'])) {
           wc_add_notice('You must authorize the payment before you can complete the order', 'error');
           return false;
@@ -414,6 +433,8 @@ function prcsnpy_init()
         if ('woocommerce_page_wc-settings' !== $hook) {
           return;
         }
+
+        wp_enqueue_style('precisionpay-admin-styles', PRCSNPY_PLUGIN_URL . '/assets/css/admin.css');
 
         // Only add this script if SSL is not enabled
         if (!is_ssl()) {
@@ -450,8 +471,6 @@ function prcsnpy_init()
         // Scripts to handle authorize payment button
         global $woocommerce;
 
-        $nonce = wp_create_nonce("mc_payment_gateway_nonce");
-
         // Let's check to see if this is an invoice (if it is then the page will have an order-pay parameter). 
         $order_amount = $woocommerce->cart->total; // In the checkout page we'll use the cart total
         if (isset($_GET['order-pay'])) {
@@ -478,7 +497,7 @@ function prcsnpy_init()
           'precisionpay-script',
           'precisionpay_data',
           array(
-            'nonce' => $nonce,
+            'precisionpay_nonce' => $this->nonce,
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'orderAmount' => $order_amount,
             'errorMessageTokenExpired' => __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce'),
@@ -502,6 +521,10 @@ function prcsnpy_init()
        */
       public function process_payment($order_id)
       {
+        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
+          exit("SERVER VERIFICATION ERROR");
+        }
+
         global $woocommerce;
         $order = new WC_Order($order_id);
         $payResponse_body = null;
@@ -595,6 +618,10 @@ function prcsnpy_init()
 
       private function pay_with_plaid($order, $order_id)
       {
+        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
+          exit("SERVER VERIFICATION ERROR");
+        }
+
         $publicToken = sanitize_text_field($_POST['precisionpay_public_token']);
         $accountId = sanitize_text_field($_POST['precisionpay_account_id']);
         $precisionpay_user_id = sanitize_text_field($_POST['precisionpay_plaid_user_id']);
@@ -683,19 +710,22 @@ function prcsnpy_init()
        */
       public function thankyou_page()
       {
-        echo '
-          <script type="text/javascript">
-          function completePrecisionPayExperience($) {
-            // Remove session PrecisionPay session storage variables
-            sessionStorage.removeItem("' . esc_js(self::SESSION_STORAGE_PRECISION_PAY) . '");
-            sessionStorage.removeItem("' . esc_js(self::SESSION_STORAGE_PLAID) . '");
-          }
 
-          jQuery(document).ready(function completePrecisionPay() {
-            completePrecisionPayExperience(jQuery);
-          });
-          </script>
-        ';
+        wp_enqueue_script(
+          'precisionpay-thankyou-script',
+          PRCSNPY_PLUGIN_URL . '/assets/js/thankyou.js',
+          array('jquery'),
+          PRCSNPY_VERSION,
+          array('strategy' => 'defer', 'in_footer' => true,)
+        );
+        wp_localize_script(
+          'precisionpay-thankyou-script',
+          'precisionpay_data',
+          array(
+            'sessionStoragePrecisionPay' => esc_js(self::SESSION_STORAGE_PRECISION_PAY),
+            'sessionStoragePlaid' => esc_js(self::SESSION_STORAGE_PLAID),
+          )
+        );
       }
 
       /**
