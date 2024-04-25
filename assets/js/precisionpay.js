@@ -23,7 +23,7 @@ function usePrecisionPayPaymentGateway($) {
   var plaidEnv = precisionpay_data.plaidEnv;
   var checkoutPortalURL = precisionpay_data.checkoutPortalURL;
 
-  var mc_merchantKey = '';
+  var mc_merchantNonce = '';
 
   function init() {
     // IF ALREADY REGISTERED OR LINKED BUT NOT YET REGISTERED SET BUTTON AS LINKED
@@ -124,17 +124,65 @@ function usePrecisionPayPaymentGateway($) {
     sessionStorage.setItem(SESSION_STORAGE_PLAID, JSON.stringify(pd));
   }
 
+  // function authorizePayment(e) {
+  //   e.preventDefault();
+
+  //   if (mc_merchantNonce === '') {
+  //     getMerchantNonce(); // Just rename this to authorize payment because we aren't going to keep the nonce but get a new one every time
+  //   } else {
+  //     openPrecisionPay(mc_merchantNonce, orderAmount);
+  //   }
+  // }
+
   function authorizePayment(e) {
     e.preventDefault();
 
-    if (mc_merchantKey === '') {
-      getKey();
-    } else {
-      openPrecisionPay(mc_merchantKey, orderAmount);
-    }
+    let data = {
+      precisionpay_nonce: nonce,
+      action: 'prcsnpy_get_merch_nonce',
+    };
+
+    $('#payment').block({
+      message: null,
+      overlayCSS: {
+        background: '#fff',
+        opacity: 0.6,
+      },
+    });
+
+    $.ajax({
+      type: 'POST',
+      url: ajaxUrl,
+      data: data,
+      success: function (data) {
+        if (data && data.body) {
+          // Remove any errors
+          $('.payment_box.payment_method_wc_gateway_precisionpay .error').remove();
+          mc_merchantNonce = data.body.merchantNonce;
+          $('#payment').unblock();
+          openPrecisionPay(mc_merchantNonce, orderAmount);
+        } else {
+          if (data.result === 'failed') {
+            var mcErrorMessage = '<p class="error" style="color: red">' + data.message + '</p>';
+            $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
+          } else {
+            console.log('Whoops. Error.', data);
+          }
+          $('#payment').unblock();
+        }
+      },
+      error: function (err) {
+        console.log(err);
+        if (err && err.message) {
+          var mcErrorMessage = '<p class="error" style="color: red">' + err.message + '</p>';
+          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
+        }
+        $('#payment').unblock();
+      },
+    });
   }
 
-  function openPrecisionPay(merchantKey, amount) {
+  function openPrecisionPay(merchantNonce, amount) {
     var mcPaymentWindow = $('.mc-payment-portal');
 
     function removePPEventListener() {
@@ -180,7 +228,7 @@ function usePrecisionPayPaymentGateway($) {
       mcPaymentWindow = $(`
       <div class="mc-payment-portal mc-overlay">
         <iframe class="mc-payment-window" src="${checkoutPortalURL}/checkout-login/${encodeURI(
-        merchantKey
+        merchantNonce
       )}/amount/${encodeURI(amount)}/env/${plaidEnv}" title="Log in to PrecisionPay"></iframe>
       </div>
       `);
@@ -213,52 +261,6 @@ function usePrecisionPayPaymentGateway($) {
 
       window.addEventListener('message', handleCompletedLogin);
     }
-  }
-
-  function getKey() {
-    let data = {
-      precisionpay_nonce: nonce,
-      action: 'prcsnpy_get_merch_key',
-    };
-
-    $('#payment').block({
-      message: null,
-      overlayCSS: {
-        background: '#fff',
-        opacity: 0.6,
-      },
-    });
-
-    $.ajax({
-      type: 'POST',
-      url: ajaxUrl,
-      data: data,
-      success: function (data) {
-        if (data && data.body) {
-          // Remove any errors
-          $('.payment_box.payment_method_wc_gateway_precisionpay .error').remove();
-          mc_merchantKey = data.body.merchantKey;
-          $('#payment').unblock();
-          openPrecisionPay(mc_merchantKey, orderAmount);
-        } else {
-          if (data.result === 'failed') {
-            var mcErrorMessage = '<p class="error" style="color: red">' + data.message + '</p>';
-            $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
-          } else {
-            console.log('Whoops. Error.', data);
-          }
-          $('#payment').unblock();
-        }
-      },
-      error: function (err) {
-        console.log(err);
-        if (err && err.message) {
-          var mcErrorMessage = '<p class="error" style="color: red">' + err.message + '</p>';
-          $('.payment_box.payment_method_wc_gateway_precisionpay').prepend(mcErrorMessage);
-        }
-        $('#payment').unblock();
-      },
-    });
   }
 
   return {

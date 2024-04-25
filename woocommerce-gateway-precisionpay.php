@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.3.0
+ * Version:              3.3.1
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.5
@@ -28,12 +28,12 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
 }
 
 // Ajax call to get the merchant API Key
-function prcsnpy_get_merch_key()
+function prcsnpy_get_merch_nonce()
 {
   if (!class_exists('PrecisionPay_Payments_For_WC')) return;
 
   $mcInstance = new PrecisionPay_Payments_For_WC();
-  $mcInstance->get_api_key();
+  $mcInstance->get_merchant_nonce();
 }
 
 add_action('wp_ajax_prcsnpy_get_merch_key', 'prcsnpy_get_merch_key');
@@ -61,7 +61,7 @@ add_filter('woocommerce_payment_gateways', 'prcsnpy_add_to_gateways');
  *
  * @class       PrecisionPay_Payments_For_WC
  * @extends     WC_Payment_Gateway
- * @version     3.3.0
+ * @version     3.3.1
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
@@ -72,7 +72,7 @@ function prcsnpy_init()
   if (!class_exists('PrecisionPay_Payments_For_WC')) :
     define('PRCSNPY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('PRCSNPY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
-    define('PRCSNPY_VERSION', '3.3.0');
+    define('PRCSNPY_VERSION', '3.3.1');
 
     class PrecisionPay_Payments_For_WC extends WC_Payment_Gateway
     {
@@ -199,12 +199,13 @@ function prcsnpy_init()
       /**
        * Get the merchant API Key for use with PrecisionPay Login
        */
-      public function get_api_key()
+      public function get_merchant_nonce()
       {
         if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
           exit("SERVER VERIFICATION ERROR");
         }
 
+        // Make sure the API Key has been added first
         $merchantApiKey = $this->api_key;
 
         if (!$merchantApiKey) {
@@ -213,12 +214,27 @@ function prcsnpy_init()
           return;
         }
 
+        $response = $this->api_get('/merchant-nonce');
+        $response_body = wp_remote_retrieve_body($response);
+
+        if (is_wp_error($response)) {
+          throw new Exception(__('Error processing server request.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        if (empty($response_body)) {
+          throw new Exception(__('Error processing payment at this time. Please try again later.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        $json_data = json_decode(wp_remote_retrieve_body($payResponse));
+        $merchantNonce = $json_data->merchantNonce;
+
+
         wp_send_json(
           array(
             'result'  => 'success',
             'message' => 'key retrieved',
             'body'    => array(
-              'merchantKey'  => $merchantApiKey
+              'merchantNonce'  => $merchantNonce
             ),
           )
         );
@@ -686,6 +702,22 @@ function prcsnpy_init()
             'Referer' => $referer
           ),
           'body'    => json_encode($paymentData), // http_build_query($payload),
+          'timeout' => 90,
+        ));
+
+        return $response;
+      }
+
+      private function api_get($endpoint)
+      {
+        $referer = sanitize_url($_SERVER['HTTP_REFERER']);
+        $response = wp_remote_get($this->api_url . $endpoint, array(
+          'headers' => array(
+            'Accept'        => 'application/json',
+            'Content-Type'  => 'application/json',
+            'X-Application-Access' => $this->api_key_header,
+            'Referer' => $referer
+          ),
           'timeout' => 90,
         ));
 

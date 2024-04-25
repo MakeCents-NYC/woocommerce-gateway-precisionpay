@@ -3,7 +3,7 @@ Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
 Tested up to: 6.5
-Stable tag: 3.3.0
+Stable tag: 3.3.1
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -12,14 +12,14 @@ Accept online bank payments in your WooCommerce store using PrecisionPay - the f
 
 == Description ==
 
-PrecisionPay is the payment solution for the firearms industry. We are a staunch supporter of the 2nd Amendment and will never cancel you for exercising your constitutional rights. Download and install our plugin and then visit our website to complete your application. Soon after that, you’ll be able to process payments for guns and ammunition without having to pay the exorbitant fees associated with “high risk” e-commerce categories.
+PrecisionPay is *the* payment solution for the firearms industry. We are a staunch supporter of the 2nd Amendment and will never cancel you for exercising your constitutional rights. Download and install our plugin and then visit our website to complete your application. Soon after that, you’ll be able to process payments for guns and ammunition without having to pay the exorbitant fees associated with “high risk” e-commerce categories.
 
 This plugin uses Plaid ([https://plaid.com/](https://plaid.com/)) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at [myprecisionpay.com](myprecisionpay.com)). View the PrecisionPay privacy policy [here](https://www.myprecisionpay.com/privacy-policy). View Plaid's privacy policy [here](https://plaid.com/legal/).
 
 = The benefits of using PrecisionPay =
 
 - **It's easy for your customers**: There is a built in, fast, and easy to use guest checkout if the user isn't already using PrecisionPay
-- **2nd Amendment Friendly**: PrecisionPay is the only WooCommerce solution entirely dedicated to supporting the sale of firearms and firearm related products.
+- **2nd Amendment Friendly**: PrecisionPay is *the* WooCommerce solution entirely dedicated to supporting the sale of firearms and firearm related products.
 - **Private**: We care about privacy as much as you do. We are transparent about what we store and we don't sell personal user data. Ever.
 - **Secure**: We use industry standards, and even go beyond industry standards where possible to keep all your payment processing secure.
 
@@ -78,6 +78,9 @@ No, however many of them will already have customer accounts. For those who don'
 4. This is the wordpress admin screen found in woocommerce->settings->payments.
 
 == Changelog ==
+
+= 3.3.1 =
+* Obfuscates Merchant Key from client.
 
 = 3.3.0 =
 * First official release of the plugin!
