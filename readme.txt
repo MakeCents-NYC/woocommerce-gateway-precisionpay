@@ -32,7 +32,7 @@ This plugin uses Plaid ([https://plaid.com/](https://plaid.com/)) along with the
 
 = Prerequisites =
 
-- Make sure you have [WooCommerce](https://wordpress.org/plugins/woocommerce/ "WooCommerce Plugin")installed.
+- Make sure you have [WooCommerce](https://wordpress.org/plugins/woocommerce/ "WooCommerce Plugin") installed.
 - You will need a PrecisionPay Merchant account. Don't have an account? Contact us: [support@myprecisionpay.com](mailto:support@myprecisionpay.com)
 - You will also need to have a connected bank account in the PrecisionPay Merchant portal. The plugin will not work if your bank account isn't connected. (You can't accept payments if you don't have a place for them to go!)
 

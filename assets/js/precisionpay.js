@@ -124,16 +124,6 @@ function usePrecisionPayPaymentGateway($) {
     sessionStorage.setItem(SESSION_STORAGE_PLAID, JSON.stringify(pd));
   }
 
-  // function authorizePayment(e) {
-  //   e.preventDefault();
-
-  //   if (mc_merchantNonce === '') {
-  //     getMerchantNonce(); // Just rename this to authorize payment because we aren't going to keep the nonce but get a new one every time
-  //   } else {
-  //     openPrecisionPay(mc_merchantNonce, orderAmount);
-  //   }
-  // }
-
   function authorizePayment(e) {
     e.preventDefault();
 
