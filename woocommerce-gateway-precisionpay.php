@@ -36,8 +36,8 @@ function prcsnpy_get_merch_nonce()
   $mcInstance->get_merchant_nonce();
 }
 
-add_action('wp_ajax_prcsnpy_get_merch_key', 'prcsnpy_get_merch_key');
-add_action('wp_ajax_nopriv_prcsnpy_get_merch_key', 'prcsnpy_get_merch_key');
+add_action('wp_ajax_prcsnpy_get_merch_nonce', 'prcsnpy_get_merch_nonce');
+add_action('wp_ajax_nopriv_prcsnpy_get_merch_nonce', 'prcsnpy_get_merch_nonce');
 
 /**
  * Add the gateway to WC Available Gateways
@@ -215,24 +215,37 @@ function prcsnpy_init()
         }
 
         $response = $this->api_get('/merchant-nonce');
-        $response_body = wp_remote_retrieve_body($response);
 
         if (is_wp_error($response)) {
-          throw new Exception(__('Error processing server request.', 'precisionpay-payments-for-woocommerce'));
+          $errorNotice = __('Error processing server request.', 'precisionpay-payments-for-woocommerce');
+          $this->ajaxFailedResponse($errorNotice);
+          return;
         }
+
+        $response_body = wp_remote_retrieve_body($response);
+
+
+        $response_data = json_decode($response_body);
 
         if (empty($response_body)) {
-          throw new Exception(__('Error processing payment at this time. Please try again later.', 'precisionpay-payments-for-woocommerce'));
+          $errorNotice = __('Error processing server request at this time. Please try again later.', 'precisionpay-payments-for-woocommerce');
+          $this->ajaxFailedResponse($errorNotice);
+          return;
         }
 
-        $json_data = json_decode(wp_remote_retrieve_body($payResponse));
-        $merchantNonce = $json_data->merchantNonce;
+        if (!$response_data->merchantNonce) {
+          $errorNotice = $response_body; // __('Error processing server request at this time. Please try again later.', 'precisionpay-payments-for-woocommerce');
+          $this->ajaxFailedResponse($errorNotice);
+          return;
+        }
+
+        $merchantNonce = $response_data->merchantNonce;
 
 
         wp_send_json(
           array(
             'result'  => 'success',
-            'message' => 'key retrieved',
+            'message' => 'nonce retrieved',
             'body'    => array(
               'merchantNonce'  => $merchantNonce
             ),
