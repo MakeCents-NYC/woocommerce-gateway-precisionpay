@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.3.1
+ * Version:              3.3.2
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.5
@@ -30,6 +30,7 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
 // Ajax call to get the merchant API Key
 function prcsnpy_get_merch_nonce()
 {
+  check_ajax_referer('precision_pay_ajax_nonce', 'precisionPayNonce');
   if (!class_exists('PrecisionPay_Payments_For_WC')) return;
 
   $mcInstance = new PrecisionPay_Payments_For_WC();
@@ -146,7 +147,6 @@ function prcsnpy_init()
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
         $this->api_key_header      = json_encode(array('apiKey'    => $this->api_key, 'apiSecret' => $this->api_secret));
-        $this->nonce               = wp_create_nonce("mc_payment_gateway_nonce");;
         $this->api_url             = self::API_URL_PROD;
         $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
 
@@ -201,10 +201,6 @@ function prcsnpy_init()
        */
       public function get_merchant_nonce()
       {
-        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
-          exit("SERVER VERIFICATION ERROR");
-        }
-
         // Make sure the API Key has been added first
         $merchantApiKey = $this->api_key;
 
@@ -413,7 +409,6 @@ function prcsnpy_init()
           // display the description with <p> tags
           echo wpautop(wp_kses_post($this->description));
         }
-
 ?>
         <fieldset id="wc-<?php echo esc_attr($this->id); ?>-mc-form" class="wc-precisionpay-form wc-payment-form" style="background:transparent;">
           <div style="display: none;">
@@ -422,7 +417,7 @@ function prcsnpy_init()
             <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden" />
             <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden" />
             <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden" />
-            <input name="precisionpay_nonce" id="precisionpay_nonce" type="hidden" value="<?php echo esc_attr($this->nonce); ?>" />
+            <?php wp_nonce_field('precisionpay_gateway_nonce', 'precisionpay_nonce'); ?>
           </div>
           <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: <?php echo esc_html(self::PRECISION_PAY_BRAND_COLOR); ?>;"><img src="<?php echo esc_url($this->logo_mark); ?>" alt="PrecisionPay logo mark" /><?php echo esc_html($this->button_title); ?></button>
           <div class="clear"></div>
@@ -442,8 +437,10 @@ function prcsnpy_init()
        */
       public function validate_fields()
       {
-        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
-          exit("SERVER VERIFICATION ERROR");
+        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "precisionpay_gateway_nonce")) {
+          $errorNotice = __('Server Error validating nonce. Please try again.');
+          wc_add_notice($errorNotice, 'error');
+          return false;
         }
 
         if (empty($_POST['precisionpay_public_token']) && empty($_POST['precisionpay_checkout_token'])) {
@@ -515,6 +512,7 @@ function prcsnpy_init()
           PRCSNPY_VERSION,
           array('in_footer' => true,)
         );
+
         wp_enqueue_script(
           'precisionpay-script',
           PRCSNPY_PLUGIN_URL . '/assets/js/precisionpay.js',
@@ -522,11 +520,12 @@ function prcsnpy_init()
           PRCSNPY_VERSION,
           array('strategy' => 'defer', 'in_footer' => true,)
         );
+
         wp_localize_script(
           'precisionpay-script',
           'precisionpay_data',
           array(
-            'precisionpay_nonce' => $this->nonce,
+            'precisionPayNonce' => wp_create_nonce("precision_pay_ajax_nonce"),
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'orderAmount' => $order_amount,
             'errorMessageTokenExpired' => __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce'),
@@ -544,16 +543,12 @@ function prcsnpy_init()
       }
 
       /**
-       * Once the form is validated we can process the payment. 
+       * Once the form is validated we can process the payment.
        * First we'll process the payment with the PrecisionPay API.
        * Next we'll go through the woocommerce checkout process to finish up.
        */
       public function process_payment($order_id)
       {
-        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
-          exit("SERVER VERIFICATION ERROR");
-        }
-
         global $woocommerce;
         $order = new WC_Order($order_id);
         $payResponse_body = null;
@@ -647,10 +642,6 @@ function prcsnpy_init()
 
       private function pay_with_plaid($order, $order_id)
       {
-        if (!isset($_POST['precisionpay_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['precisionpay_nonce'])), "mc_payment_gateway_nonce")) {
-          exit("SERVER VERIFICATION ERROR");
-        }
-
         $publicToken = sanitize_text_field($_POST['precisionpay_public_token']);
         $accountId = sanitize_text_field($_POST['precisionpay_account_id']);
         $precisionpay_user_id = sanitize_text_field($_POST['precisionpay_plaid_user_id']);
