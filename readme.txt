@@ -3,7 +3,7 @@ Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
 Tested up to: 6.5
-Stable tag: 3.3.1
+Stable tag: 3.3.2
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -80,7 +80,7 @@ No, however many of them will already have customer accounts. For those who don'
 == Changelog ==
 
 = 3.3.2 =
-* Bugfix for edgecase where a user who gets automatically logged in would have to hit the place order button twice
+* Bugfix for edge case where a user who gets automatically logged in after placing the order would have to hit the place order button a second time.
 
 = 3.3.1 =
 * Obfuscates Merchant Key from client.
@@ -92,7 +92,7 @@ No, however many of them will already have customer accounts. For those who don'
 == Upgrade Notice ==
 
 = 3.3.2 =
-Bugfix for edgecase where a user who gets automatically logged in would have to hit the place order button twice
+Bugfix for edge case where a user who gets automatically logged in after placing the order would have to hit the place order button a second time.
 
 = 3.3.0 =
 This is the first public version of PrecisionPay for WooCommerce and is the minimum requred to start accepting payments with the PrecisionPay network. (v1, v2, v3.0, v3.1, and v3.2 were were still in an MVP stage and were private).
