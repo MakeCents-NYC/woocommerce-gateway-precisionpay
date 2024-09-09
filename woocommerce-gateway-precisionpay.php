@@ -281,7 +281,7 @@ function prcsnpy_init()
           '</a>
           </span>
             </div>
-            <h3>Welcome to PrecisionPay, the Seconds Amendment payments company.</h3>
+            <h3>Welcome to PrecisionPay, the Second Amendment payments company.</h3>
             <p>If you already have a merchant account, enter your keys below. If not, visit 
             <a target="_blank" href="https://www.myprecisionpay.com">myprecisionpay.com</a> 
             to apply for a merchant account.</p>
@@ -306,44 +306,7 @@ function prcsnpy_init()
 
       public function render_settings()
       {
-        echo '<table class="form-table">' . wp_kses(
-          $this->generate_settings_html($this->get_form_fields(), false),
-          array(
-            'tbody' => true,
-            'tr' => array(
-              'valign' => array()
-            ),
-            'th' => array(
-              'scope' => array(),
-              'class' => array()
-            ),
-            'label' => array(
-              'for' => array()
-            ),
-            'td' => array(
-              'class' => array()
-            ),
-            'fieldset' => true,
-            'legend' => array(
-              'class' => array()
-            ),
-            'span' => array(
-              'class' => array(),
-              'tabindex' => array(),
-              'aria-label' => array()
-            ),
-            'input' => array(
-              'class' => array(),
-              'type' => array(),
-              'name' => array(),
-              'id' => array(),
-              'style' => array(),
-              'value' => array(),
-              'checked' => array(),
-              'placeholder' => array()
-            ),
-          ),
-        ) . '</table>';
+        echo '<table class="form-table">' . $this->generate_settings_html($this->get_form_fields(), false) . '</table>';
       }
 
       /**
