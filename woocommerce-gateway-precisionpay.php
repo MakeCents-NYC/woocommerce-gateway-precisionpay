@@ -4,12 +4,12 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.3.2
+ * Version:              3.3.3
  * Requires PHP:         7.2
  * Requires at least:    5.9
- * Tested up to:         6.5
+ * Tested up to:         6.6
  * WC requires at least: 3.9
- * WC tested up to:      8.7
+ * WC tested up to:      9.2
  * Author:               PrecisionPay
  * Author URI:           https://www.myprecisionpay.com
  * License:              GPL-3.0
@@ -62,7 +62,7 @@ add_filter('woocommerce_payment_gateways', 'prcsnpy_add_to_gateways');
  *
  * @class       PrecisionPay_Payments_For_WC
  * @extends     WC_Payment_Gateway
- * @version     3.3.1
+ * @version     3.3.3
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
@@ -73,7 +73,7 @@ function prcsnpy_init()
   if (!class_exists('PrecisionPay_Payments_For_WC')) :
     define('PRCSNPY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('PRCSNPY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
-    define('PRCSNPY_VERSION', '3.3.1');
+    define('PRCSNPY_VERSION', '3.3.3');
 
     class PrecisionPay_Payments_For_WC extends WC_Payment_Gateway
     {
@@ -134,11 +134,12 @@ function prcsnpy_init()
         $this->loading_icon_long   = PRCSNPY_PLUGIN_URL . '/assets/img/pp_loading_screen_w_text.png';
         $this->has_fields          = true;
         $this->method_title        = self::PRECISION_PAY_TITLE;
-        $this->method_description  = __('Welcome to PrecisionPay, the Seconds Amendment payments company.<br />If you already have a merchant account, enter your keys below. If not, visit myprecisionpay.com to apply for a merchant account.', 'precisionpay-payments-for-woocommerce');
+        $this->method_description  = __('Welcome to PrecisionPay, the Second Amendment payments company.<br />If you already have a merchant account, enter your keys below. If not, visit myprecisionpay.com to apply for a merchant account.', 'precisionpay-payments-for-woocommerce');
         $this->brand_title         = self::PRECISION_PAY_TITLE;
         $this->title               = self::PRECISION_PAY_TITLE;
         $this->button_title        = __('Authorize Payment', 'precisionpay-payments-for-woocommerce');
-        $this->description         = __('Liberate your Second Amendment purchases with our fast, secure and private payment service. It\'s free, and no membership required!', 'precisionpay-payments-for-woocommerce');
+        // $this->description         = __('Liberate your Second Amendment purchases with our fast, secure and private payment service. It\'s free, and no membership required!', 'precisionpay-payments-for-woocommerce');
+        $this->description         = __('Stop being tracked! Protect your privacy and your liberty with PrecisionPay, your 2nd Amendment payment service.', 'precisionpay-payments-for-woocommerce');
         $this->enabled             = $this->get_option('enabled');
         $this->enableTestMode      = 'yes' === $this->get_option('enableTestMode'); // Checkbox comes in as yes if checked
         $this->env                 = $this->enableTestMode ? self::PP_ENV_SANDBOX : self::PP_ENV_PRODUCTION;

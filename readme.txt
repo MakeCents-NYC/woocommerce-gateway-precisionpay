@@ -2,8 +2,8 @@
 Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
-Tested up to: 6.5
-Stable tag: 3.3.2
+Tested up to: 6.6
+Stable tag: 3.3.3
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
