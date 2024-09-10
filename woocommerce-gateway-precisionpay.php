@@ -138,7 +138,6 @@ function prcsnpy_init()
         $this->brand_title         = self::PRECISION_PAY_TITLE;
         $this->title               = self::PRECISION_PAY_TITLE;
         $this->button_title        = __('Authorize Payment', 'precisionpay-payments-for-woocommerce');
-        // $this->description         = __('Liberate your Second Amendment purchases with our fast, secure and private payment service. It\'s free, and no membership required!', 'precisionpay-payments-for-woocommerce');
         $this->description         = __("Stop being tracked! Protect your privacy and your liberty with PrecisionPay, your 2nd Amendment payment service. It's free, and no membership required!", 'precisionpay-payments-for-woocommerce');
         $this->enabled             = $this->get_option('enabled');
         $this->enableTestMode      = 'yes' === $this->get_option('enableTestMode'); // Checkbox comes in as yes if checked
