@@ -1,0 +1,17 @@
+== Changelog ==
+
+= 3.4.0 =
+* New Feature: Refunds - Refunds can now be initiated through WooCommerce order page.
+
+= 3.3.3 =
+* Minor bugfixes and some UI updates.
+
+= 3.3.2 =
+* Bugfix for edge case where a user who gets automatically logged in after placing the order would have to hit the place order button a second time.
+
+= 3.3.1 =
+* Obfuscates Merchant Key from client.
+
+= 3.3.0 =
+* First official release of the plugin!
+* Adds a WooCommerce payment gateway that allows users to pay with their PrecisionPay account or as a guest at checkout, or when paying for an invoice.
