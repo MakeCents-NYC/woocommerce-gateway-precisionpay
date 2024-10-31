@@ -3,7 +3,7 @@ Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
 Tested up to: 6.6
-Stable tag: 3.3.3
+Stable tag: 3.4.0
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -79,6 +79,12 @@ No, however many of them will already have customer accounts. For those who don'
 
 == Changelog ==
 
+= 3.4.0 =
+* New Feature: Refunds - Refunds can now be initiated through WooCommerce order page.
+
+= 3.3.3 =
+* Minor bugfixes and some UI updates.
+
 = 3.3.2 =
 * Bugfix for edge case where a user who gets automatically logged in after placing the order would have to hit the place order button a second time.
 
@@ -90,6 +96,12 @@ No, however many of them will already have customer accounts. For those who don'
 * Adds a WooCommerce payment gateway that allows users to pay with their PrecisionPay account or as a guest at checkout, or when paying for an invoice.
 
 == Upgrade Notice ==
+
+= 3.4.0 =
+New Feature: Refunds - From the WooCommerce order page, submitting a refund with precisionpay will automatically refund your customer. Select any amount up to the total of the order.
+
+= 3.3.3 =
+This version has some minor bugfixes and UI improvements.
 
 = 3.3.2 =
 Bugfix for edge case where a user who gets automatically logged in after placing the order would have to hit the place order button a second time.

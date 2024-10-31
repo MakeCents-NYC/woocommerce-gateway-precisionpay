@@ -4,12 +4,12 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.3.3
+ * Version:              3.4.0
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.6
  * WC requires at least: 3.9
- * WC tested up to:      9.2
+ * WC tested up to:      9.3
  * Author:               PrecisionPay
  * Author URI:           https://www.myprecisionpay.com
  * License:              GPL-3.0
@@ -124,6 +124,7 @@ function prcsnpy_init()
       private $nonce;
       private $api_url;
       private $checkout_url;
+      public $supports;
 
       public function __construct()
       {
@@ -146,9 +147,10 @@ function prcsnpy_init()
         $this->api_key             = $this->get_option('api_key');
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
-        $this->api_key_header      = json_encode(array('apiKey'    => $this->api_key, 'apiSecret' => $this->api_secret));
+        $this->api_key_header      = json_encode(array('apiKey' => $this->api_key, 'apiSecret' => $this->api_secret));
         $this->api_url             = self::API_URL_PROD;
         $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
+        $this->supports            = array('products', 'refunds');
 
         // Admin actions
         add_action('admin_init', array($this, 'add_privacy_message'));
@@ -740,6 +742,74 @@ function prcsnpy_init()
         // if ($this->instructions && !$sent_to_admin && 'precisionpay' == $order->payment_method && $order->has_status('on-hold')) {
         //   echo wpautop(wptexturize($this->instructions)) . PHP_EOL;
         // }
+      }
+
+      public function process_refund($order_id, $amount = null, $reason = '')
+      {
+        // Step 1: Get the order
+        $order = wc_get_order($order_id);
+
+        if (! $this->can_refund_order($order)) {
+          return new WP_Error('error', __('Refund failed.', 'woocommerce'));
+        }
+
+        // if no amount set to full amount
+        if ($amount == null) {
+          $amount = $order->get_total();
+        }
+
+        if (floatval($amount) <= 0) {
+          return new WP_Error('error', 'Please specify an amount greater than 0.');
+        }
+
+        // Step 2: Check that amount <= the order amount (This appears to be handled by WooCommerce)
+        if (floatval($order->get_total()) < floatval($amount)) {
+          return new WP_Error('Refund amount is greater than order amount', 'error');
+        }
+
+        // Step 3: Make a call to refund payment - PrecisionPay API
+        $orderNumber = $this->get_order_number($order, $order_id);
+        $refundData = array(
+          'order'  => strval($orderNumber),
+          'reason' => strval($reason),
+          'note'   => '',
+          'amount' => floatval($amount),
+        );
+        $refundResponse = $this->api_post('/checkout/refund', $refundData);
+
+        if (is_wp_error($refundResponse)) {
+          static::log('Refund Failed: ' . $refundResponse->get_error_message(), 'error');
+          return new WP_Error('error', $refundResponse->get_error_message());
+        } else if (empty($refundResponse['body'])) {
+          return new WP_Error('error', __('Error processing refund at this time. Please try again later.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        $refundResponse_body = json_decode(wp_remote_retrieve_body($refundResponse));
+
+        if (!$refundResponse_body || !isset($refundResponse_body->message) || !$refundResponse_body->message == 'success') {
+          $responseErrorMessage = $refundResponse_body ? $refundResponse_body->detail : '';
+          return new WP_Error('error', $responseErrorMessage);
+        }
+
+        // Step 4: If success return true
+        return true;
+      }
+
+      /**
+       * Logging method.
+       *
+       * @param string $message Log message.
+       * @param string $level Optional. Default 'info'. Possible values:
+       *                      emergency|alert|critical|error|warning|notice|info|debug.
+       */
+      public static function log($message, $level = 'info')
+      {
+        if (self::$log_enabled) {
+          if (empty(self::$log)) {
+            self::$log = wc_get_logger();
+          }
+          self::$log->log($level, $message, array('source' => 'precisionpay'));
+        }
       }
     } // end PrecisionPay_Payments_For_WC class
   endif;
