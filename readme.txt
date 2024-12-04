@@ -2,8 +2,8 @@
 Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
-Tested up to: 6.6
-Stable tag: 3.4.0
+Tested up to: 6.7
+Stable tag: 3.4.1
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -79,10 +79,13 @@ No, however many of them will already have customer accounts. For those who don'
 
 == Changelog ==
 
-= 3.4.0 =
-* New Feature: Refunds - Refunds can now be initiated through WooCommerce order page.
+= 3.4.1 =
+* Minor Update: Wording on expired token error messages updated.
 
 == Upgrade Notice ==
+
+= 3.4.1 =
+* Minor Update: Wording on expired token error messages updated to give greater context to user.
 
 = 3.4.0 =
 New Feature: Refunds - From the WooCommerce order page, submitting a refund with precisionpay will automatically refund your customer. Select any amount up to the total of the order.

@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.4.0
+ * Version:              3.4.1
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.6
@@ -494,7 +494,7 @@ function prcsnpy_init()
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'orderAmount' => $order_amount,
             'errorMessageTokenExpired' => __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce'),
-            'errorMessagePlaidTokenExpired' => __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce'),
+            'errorMessagePlaidTokenExpired' => __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce'),
             'errorMessageNoValidAccounts' => __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce'),
             'defaultButtonBg' => self::PRECISION_PAY_BRAND_COLOR,
             'defaultButtonTitle' => $this->button_title,
@@ -546,7 +546,8 @@ function prcsnpy_init()
                 // Handle expired token
                 $errorNotice = __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce');
               } else if ($responseErrorMessage === self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
-                $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
+                // $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
+                $errorNotice = __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce');
               } else if ($responseErrorMessage === self::ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND) {
                 $errorNotice = __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce');
               } else {

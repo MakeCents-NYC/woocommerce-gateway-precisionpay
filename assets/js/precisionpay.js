@@ -67,6 +67,8 @@ function usePrecisionPayPaymentGateway($) {
         resetButtonUI();
         removePPDataFromHiddenField();
         sessionStorage.removeItem(SESSION_STORAGE_PRECISION_PAY);
+        removePlaidDataFromHiddenField();
+        sessionStorage.removeItem(SESSION_STORAGE_PLAID);
       }
     });
   }
@@ -97,6 +99,13 @@ function usePrecisionPayPaymentGateway($) {
 
   function removePPDataFromHiddenField() {
     $('#precisionpay_checkout_token').val('');
+  }
+
+  function removePlaidDataFromHiddenField() {
+    $('#precisionpay_public_token').val('');
+    $('#precisionpay_account_id').val('');
+    $('#precisionpay_plaid_user_id').val('');
+    $('#precisionpay_registered_user_id').val('');
   }
 
   function handlePPData(precisionPayToken) {
