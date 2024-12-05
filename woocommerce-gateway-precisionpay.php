@@ -7,9 +7,9 @@
  * Version:              3.4.1
  * Requires PHP:         7.2
  * Requires at least:    5.9
- * Tested up to:         6.6
+ * Tested up to:         6.7
  * WC requires at least: 3.9
- * WC tested up to:      9.3
+ * WC tested up to:      9.4
  * Author:               PrecisionPay
  * Author URI:           https://www.myprecisionpay.com
  * License:              GPL-3.0

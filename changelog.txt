@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 3.4.1 =
+* Minor Update: Wording on expired token error messages updated.
+
 = 3.4.0 =
 * New Feature: Refunds - Refunds can now be initiated through WooCommerce order page.
 
