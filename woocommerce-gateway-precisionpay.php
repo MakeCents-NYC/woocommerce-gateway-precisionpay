@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.4.1
+ * Version:              4.0.0-CCDEMO
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.7
@@ -40,6 +40,19 @@ function prcsnpy_get_merch_nonce()
 add_action('wp_ajax_prcsnpy_get_merch_nonce', 'prcsnpy_get_merch_nonce');
 add_action('wp_ajax_nopriv_prcsnpy_get_merch_nonce', 'prcsnpy_get_merch_nonce');
 
+// Ajax call to get the elavon credit card token
+function prcsnpy_get_cc_token()
+{
+  check_ajax_referer('precision_pay_ajax_nonce', 'precisionPayNonce');
+  if (!class_exists('PrecisionPay_Payments_For_WC')) return;
+
+  $mcInstance = new PrecisionPay_Payments_For_WC();
+  $mcInstance->get_credit_card_token();
+}
+
+add_action('wp_ajax_prcsnpy_get_cc_token', 'prcsnpy_get_cc_token');
+add_action('wp_ajax_nopriv_prcsnpy_get_cc_token', 'prcsnpy_get_cc_token');
+
 /**
  * Add the gateway to WC Available Gateways
  * 
@@ -62,7 +75,7 @@ add_filter('woocommerce_payment_gateways', 'prcsnpy_add_to_gateways');
  *
  * @class       PrecisionPay_Payments_For_WC
  * @extends     WC_Payment_Gateway
- * @version     3.3.3
+ * @version     4.0.0
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
@@ -73,11 +86,12 @@ function prcsnpy_init()
   if (!class_exists('PrecisionPay_Payments_For_WC')) :
     define('PRCSNPY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('PRCSNPY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
-    define('PRCSNPY_VERSION', '3.3.3');
+    define('PRCSNPY_VERSION', '4.0.0');
 
     class PrecisionPay_Payments_For_WC extends WC_Payment_Gateway
     {
       const PRECISION_PAY_BRAND_COLOR = '#F15A29';
+      const CC_BUTTON_COLOR = '#1aaec5';
       const PRECISION_PAY_TITLE = 'PrecisionPay';
       const ERROR_MESSAGE_EXPIRED_PLAID_TOKEN = 'Your account authorization has expired, authorizations expire after 30 minutes';
       const ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND = 'There are no valid checking or savings account(s) associated with this Item.';
@@ -85,6 +99,7 @@ function prcsnpy_init()
       // Session constants
       const SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
       const SESSION_STORAGE_PLAID = 'mcPlaidData';
+      const SESSION_STORAGE_PRECISION_PAY_CC = 'mcPrecisionPayCCData';
 
       // Plaid Environments
       const PLAID_ENV_SANDBOX = 'sandbox';
@@ -112,9 +127,16 @@ function prcsnpy_init()
       private $logo_mark;
       private $loading_icon;
       private $loading_icon_long;
+      private $cc_icon;
       private $brand_title;
       private $button_title;
+      private $button_cc_title;
       private $enableTestMode;
+      private $enableCreditCards;
+      private $merchantID;
+      private $merchantUserID;
+      private $merchantPinCode;
+      private $merchantVendorID;
       private $env;
       private $plaid_env;
       private $api_key;
@@ -124,6 +146,8 @@ function prcsnpy_init()
       private $nonce;
       private $api_url;
       private $checkout_url;
+      private $cc_api_url;
+      private $cc_xml_api_url;
       public $supports;
 
       public function __construct()
@@ -133,15 +157,22 @@ function prcsnpy_init()
         $this->logo_mark           = PRCSNPY_PLUGIN_URL . '/assets/img/logo_mark_white.svg';
         $this->loading_icon        = PRCSNPY_PLUGIN_URL . '/assets/img/pp_loading_screen_300.png';
         $this->loading_icon_long   = PRCSNPY_PLUGIN_URL . '/assets/img/pp_loading_screen_w_text.png';
+        $this->cc_icon             = PRCSNPY_PLUGIN_URL . '/assets/img/credit-card.svg';
         $this->has_fields          = true;
         $this->method_title        = self::PRECISION_PAY_TITLE;
         $this->method_description  = __('Welcome to PrecisionPay, the Second Amendment payments company.<br />If you already have a merchant account, enter your keys below. If not, visit myprecisionpay.com to apply for a merchant account.', 'precisionpay-payments-for-woocommerce');
         $this->brand_title         = self::PRECISION_PAY_TITLE;
         $this->title               = self::PRECISION_PAY_TITLE;
-        $this->button_title        = __('Authorize Payment', 'precisionpay-payments-for-woocommerce');
-        $this->description         = __("Stop being tracked! Protect your privacy and your liberty with PrecisionPay, your 2nd Amendment payment service. It's free, and no membership required!", 'precisionpay-payments-for-woocommerce');
+        $this->button_title        = __('Pay by Bank', 'precisionpay-payments-for-woocommerce');
+        $this->button_cc_title     = __('Pay with Credit Card', 'precisionpay-payments-for-woocommerce');
+        $this->description         = __("Protect your privacy and liberty with PrecisionPay: 2A payments made easy.", 'precisionpay-payments-for-woocommerce');
         $this->enabled             = $this->get_option('enabled');
         $this->enableTestMode      = 'yes' === $this->get_option('enableTestMode'); // Checkbox comes in as yes if checked
+        $this->enableCreditCards   = 'yes' === $this->get_option('enableCreditCards');
+        $this->merchantID          = $this->get_option('merchantID');
+        $this->merchantUserID      = $this->get_option('merchantUserID');
+        $this->merchantPinCode     = $this->get_option('merchantPinCode');
+        $this->merchantVendorID    = 'sc963115';
         $this->env                 = $this->enableTestMode ? self::PP_ENV_SANDBOX : self::PP_ENV_PRODUCTION;
         $this->plaid_env           = $this->enableTestMode ? self::PLAID_ENV_SANDBOX : self::PLAID_ENV_PRODUCTION;
         $this->api_key             = $this->get_option('api_key');
@@ -150,6 +181,8 @@ function prcsnpy_init()
         $this->api_key_header      = json_encode(array('apiKey' => $this->api_key, 'apiSecret' => $this->api_secret));
         $this->api_url             = self::API_URL_PROD;
         $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
+        $this->cc_api_url          = 'https://api.demo.convergepay.com/hosted-payments';
+        $this->cc_xml_api_url      = 'https://api.demo.convergepay.com/VirtualMerchantDemo';
         $this->supports            = array('products', 'refunds');
 
         // Admin actions
@@ -251,6 +284,53 @@ function prcsnpy_init()
         );
       }
 
+      public function get_credit_card_token()
+      {
+        $url = $this->cc_api_url . '/transaction_token';
+        $amount = sanitize_text_field($_POST['amount']);
+        $zip = sanitize_text_field($_POST['zipCode']);
+        $address1 = sanitize_text_field($_POST['address1']);
+
+        $ch = curl_init(); // initialize curl handle
+        curl_setopt($ch, CURLOPT_URL, $url); // set url to post to
+        curl_setopt($ch, CURLOPT_POST, true); // set POST method
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt(
+          $ch,
+          CURLOPT_POSTFIELDS,
+          'ssl_account_id=' . $this->merchantID .
+            '&ssl_user_id=' . $this->merchantUserID .
+            '&ssl_pin=' . $this->merchantPinCode .
+            '&ssl_vendor_id=' . $this->merchantVendorID .
+            '&ssl_transaction_type=CCGETTOKEN' .
+            '&ssl_amount=' . $amount .
+            '&ssl_avs_zip=' . $zip .
+            '&ssl_avs_address=' . $address1 .
+            '&ssl_verify=y'
+        );
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        if (str_contains($result, 'error code')) {
+          $this->ajaxFailedResponse($result);
+        } else {
+          wp_send_json(
+            array(
+              'result'  => 'success',
+              'message' => 'token retrieved',
+              'body'    => array(
+                'ccToken'  => $result
+              ),
+            )
+          );
+        }
+      }
+
       private function ajaxFailedResponse($message)
       {
         wp_send_json(
@@ -338,6 +418,26 @@ function prcsnpy_init()
             'title'       => __('API Secret', 'precisionpay-payments-for-woocommerce'),
             'type'        => 'password'
           ),
+          'enableCreditCards' => array(
+            'title'       => __('Enable Credit Card Payments', 'precisionpay-payments-for-woocommerce'),
+            'label'       => __('Enable Credit Card Payments', 'precisionpay-payments-for-woocommerce'),
+            'type'        => 'checkbox',
+            'description' => __('Allow customers to pay with credit card in addition to bank payments', 'precisionpay-payments-for-woocommerce'),
+            'default'     => '',
+            'desc_tip'    => true,
+          ),
+          'merchantID' => array(
+            'title'       => __('Credit Card Account ID', 'precisionpay-payments-for-woocommerce'),
+            'type'        => 'text'
+          ),
+          'merchantUserID' => array(
+            'title'       => __('Credit Card User ID', 'precisionpay-payments-for-woocommerce'),
+            'type'        => 'text'
+          ),
+          'merchantPinCode' => array(
+            'title'       => __('Credit Card Pin Code', 'precisionpay-payments-for-woocommerce'),
+            'type'        => 'password'
+          ),
         ));
       }
 
@@ -377,14 +477,29 @@ function prcsnpy_init()
 ?>
         <fieldset id="wc-<?php echo esc_attr($this->id); ?>-mc-form" class="wc-precisionpay-form wc-payment-form" style="background:transparent;">
           <div style="display: none;">
-            <input name="precisionpay_public_token" id="precisionpay_public_token" type="hidden" />
-            <input name="precisionpay_account_id" id="precisionpay_account_id" type="hidden" />
-            <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden" />
-            <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden" />
-            <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden" />
+            <div class="bank-plaid">
+              <input name="precisionpay_public_token" id="precisionpay_public_token" type="hidden" />
+              <input name="precisionpay_account_id" id="precisionpay_account_id" type="hidden" />
+              <input name="precisionpay_plaid_user_id" id="precisionpay_plaid_user_id" value="" type="hidden" />
+              <input name="precisionpay_registered_user_id" id="precisionpay_registered_user_id" value="" type="hidden" />
+            </div>
+            <div class="bank-precision-pay-member">
+              <input name="precisionpay_checkout_token" id="precisionpay_checkout_token" value="" type="hidden" />
+            </div>
+            <div class="credit-card">
+              <input name="precisionpay_creditcard_token" id="precisionpay_creditcard_token" value="" type="hidden" />
+              <input name="precisionpay_creditcard_exp_date" id="precisionpay_creditcard_exp_date" value="" type="hidden" />
+              <input name="precisionpay_creditcard_oar_data" id="precisionpay_creditcard_oar_data" value="" type="hidden" />
+              <input name="precisionpay_creditcard_ps2000_data" id="precisionpay_creditcard_ps2000_data" value="" type="hidden" />
+              <input name="precisionpay_creditcard_approval_code" id="precisionpay_creditcard_approval_code" value="" type="hidden" />
+            </div>
             <?php wp_nonce_field('precisionpay_gateway_nonce', 'precisionpay_nonce'); ?>
           </div>
-          <button id="precisionpay-link-button" class="precisionpay-plaid-link-button" style="background-color: <?php echo esc_html(self::PRECISION_PAY_BRAND_COLOR); ?>;"><img src="<?php echo esc_url($this->logo_mark); ?>" alt="PrecisionPay logo mark" /><?php echo esc_html($this->button_title); ?></button>
+          <button id="precisionpay-link-button" class="precisionpay-plaid-link-button precisionpay-button" style="background-color: <?php echo esc_html(self::PRECISION_PAY_BRAND_COLOR); ?>;"><img src="<?php echo esc_url($this->logo_mark); ?>" alt="PrecisionPay logo mark" /><?php echo esc_html($this->button_title); ?></button>
+          <?php if ($this->enableCreditCards): ?>
+            <p class="precisionpay-p">OR...</p>
+            <button id="precisionpay-cc-button" class="precisionpay-button" style="background-color: <?php echo esc_html(self::CC_BUTTON_COLOR); ?>;"><img src="<?php echo esc_url($this->cc_icon); ?>" alt="pay with credit card" /><?php echo esc_html($this->button_cc_title); ?></button>
+          <?php endif; ?>
           <div class="clear"></div>
           <div class="clear"><img class="precisionPayLoadingFullPNG" src="<?php echo esc_url($this->loading_icon_long); ?>" /></div>
           <script type="text/javascript">
@@ -408,7 +523,7 @@ function prcsnpy_init()
           return false;
         }
 
-        if (empty($_POST['precisionpay_public_token']) && empty($_POST['precisionpay_checkout_token'])) {
+        if (empty($_POST['precisionpay_public_token']) && empty($_POST['precisionpay_checkout_token']) && empty($_POST['precisionpay_creditcard_token'])) {
           wc_add_notice('You must authorize the payment before you can complete the order', 'error');
           return false;
         }
@@ -431,6 +546,8 @@ function prcsnpy_init()
         if (!is_ssl()) {
           wp_enqueue_script('mc_admin_script_ssl', PRCSNPY_PLUGIN_URL . '/assets/js/admin-script-ssl.js');
         }
+
+        wp_enqueue_script('mc_admin_script', PRCSNPY_PLUGIN_URL . '/assets/js/admin-script.js');
       }
 
       /**
@@ -458,6 +575,11 @@ function prcsnpy_init()
 
         // Using Plaid Link to obtain a token
         wp_enqueue_script('plaid_link', 'https://cdn.plaid.com/link/v2/stable/link-initialize.js', array(), null, true);
+
+        // Using Elavon's converge lightbox if credit cards enabled
+        if ($this->enableCreditCards) {
+          wp_enqueue_script('elavon_link', 'https://demo.convergepay.com/hosted-payments/PayWithConverge.js', array(), null, true);
+        }
 
         // Scripts to handle authorize payment button
         global $woocommerce;
@@ -497,8 +619,11 @@ function prcsnpy_init()
             'errorMessagePlaidTokenExpired' => __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce'),
             'errorMessageNoValidAccounts' => __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce'),
             'defaultButtonBg' => self::PRECISION_PAY_BRAND_COLOR,
+            'defaultCCButtonBg' => self::CC_BUTTON_COLOR,
             'defaultButtonTitle' => $this->button_title,
+            'defaultCCButtonTitle' => $this->button_cc_title,
             'logoMark' => $this->logo_mark,
+            'ccIcon' => $this->cc_icon,
             'loadingImg' => $this->loading_icon,
             'loadingImgLong' => $this->loading_icon_long,
             'plaidEnv' => $this->plaid_env,
@@ -518,15 +643,23 @@ function prcsnpy_init()
         $order = new WC_Order($order_id);
         $payResponse_body = null;
         $precisionpayCheckoutToken = sanitize_text_field($_POST['precisionpay_checkout_token']);
+        $precisionpayPlaidToken = sanitize_text_field($_POST['precisionpay_public_token']);
+        $isCCPayment = false;
 
         if ($precisionpayCheckoutToken) {
           $payResponse_body = $this->pay_with_precisionpay($order, $order_id, $precisionpayCheckoutToken);
-        } else {
+        } else if ($precisionpayPlaidToken) {
           $payResponse_body = $this->pay_with_plaid($order, $order_id);
+        } else {
+          $isCCPayment = true;
+          $payResponse_body = $this->pay_with_credit_card($order, $order_id);
         }
 
         try {
-          if ($payResponse_body && isset($payResponse_body->message) && $payResponse_body->message == 'success') {
+          if ($payResponse_body && (
+            (isset($payResponse_body->message) && $payResponse_body->message == 'success') ||
+            ($isCCPayment == true && !isset($payResponse_body->errorMessage) && (string) $payResponse_body->ssl_result_message == 'APPROVAL')
+          )) {
             $order->add_order_note(__('Customer successfully paid through PrecisionPay payment gateway', 'precisionpay-payments-for-woocommerce'));
             wc_reduce_stock_levels($order_id);
             $order->payment_complete();
@@ -558,6 +691,15 @@ function prcsnpy_init()
                   $errorNotice .= $payResponse_body->detail;
                 }
               }
+            } else if ($isCCPayment) {
+              $ccMessage = $payResponse_body->errorMessage ?
+                (string) $payResponse_body->errorMessage :
+                'There was a problem processing your card. Please try again or use another card.';
+              $sslResultMessage = (string) $payResponse_body->ssl_result_message;
+              if (str_contains($sslResultMessage, 'DECLINED')) {
+                $ccMessage = 'Your card was declined.';
+              }
+              $errorNotice = "Credit card error: " . $ccMessage;
             }
             wc_add_notice($errorNotice, 'error');
             // Also add note to the order for wp-admin reference
@@ -660,6 +802,63 @@ function prcsnpy_init()
         return $payResponse_body;
       }
 
+      private function pay_with_credit_card($order, $order_id)
+      {
+        $sslToken = sanitize_text_field($_POST['precisionpay_creditcard_token']);
+        $sslExpDate = sanitize_text_field($_POST['precisionpay_creditcard_exp_date']);
+        $sslOarData = sanitize_text_field($_POST['precisionpay_creditcard_oar_data']);
+        $sslPs2000Data = sanitize_text_field($_POST['precisionpay_creditcard_ps2000_data']);
+        $sslApprovalCode = sanitize_text_field($_POST['precisionpay_creditcard_approval_code']);
+
+        if (!$sslToken || !$sslExpDate || !$sslOarData || !$sslPs2000Data || !$sslApprovalCode) {
+          throw new Exception(__('Credit Card processing failed. Please try again.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        // Validate the input:
+        $this->validate_hidden_field($sslToken, __('Invalid token.', 'precisionpay-payments-for-woocommerce'));
+        $this->validate_hidden_field($sslExpDate, __('Invalid exp date.', 'precisionpay-payments-for-woocommerce'));
+        $this->validate_hidden_field($sslOarData, __('Invalid oar data.', 'precisionpay-payments-for-woocommerce'));
+        $this->validate_hidden_field($sslPs2000Data, __('Invalid ps2000 data.', 'precisionpay-payments-for-woocommerce'));
+        $this->validate_hidden_field($sslApprovalCode, __('Invalid approval code.', 'precisionpay-payments-for-woocommerce'));
+
+        $orderNumber = $this->get_order_number($order, $order_id);
+
+        $paymentData = array(
+          'ssl_account_id'       => $this->merchantID,
+          'ssl_user_id'          => $this->merchantUserID,
+          'ssl_pin'              => $this->merchantPinCode,
+          'ssl_vendor_id'        => $this->merchantVendorID,
+          'ssl_transaction_type' => 'CCSALE',
+          'ssl_amount'           => $order->get_total(),
+          'ssl_token'            => $sslToken,
+          'ssl_exp_date'         => $sslExpDate,
+          'ssl_invoice_number'   => $orderNumber,
+          'ssl_first_name'       => $order->get_billing_first_name(),
+          'ssl_last_name'        => $order->get_billing_last_name(),
+          'ssl_avs_address'      => $order->get_billing_address_1(),
+          'ssl_avs_zip'          => $order->get_billing_postcode(),
+          'ssl_entry_mode'       => 12,
+          'ssl_oar_data'         => $sslOarData,
+          'ssl_ps2000_data'      => $sslPs2000Data,
+          'ssl_approval_code'    => $sslApprovalCode,
+        );
+
+        $payResponse = $this->xml_api_post('/processxml.do', $paymentData);
+
+        if (is_wp_error($payResponse)) {
+          throw new Exception(__('Error processing payment.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        if (empty($payResponse['body'])) {
+          throw new Exception(__('Error processing payment at this time. Please try again later.', 'precisionpay-payments-for-woocommerce'));
+        }
+
+        $payResponse_body = wp_remote_retrieve_body($payResponse);
+        $xml_obj_response_body = simplexml_load_string($payResponse_body);
+
+        return $xml_obj_response_body;
+      }
+
       private function api_post($endpoint, $paymentData)
       {
         $referer = sanitize_url($_SERVER['HTTP_REFERER']);
@@ -687,6 +886,28 @@ function prcsnpy_init()
             'Content-Type'  => 'application/json',
             'X-Application-Access' => $this->api_key_header,
             'Referer' => $referer
+          ),
+          'timeout' => 90,
+        ));
+
+        return $response;
+      }
+
+      private function xml_api_post($endpoint, $paymentData)
+      {
+        $xmlData = "<txn>";
+        foreach ($paymentData as $key => $value) {
+          $xmlData .= "<$key>" . $value . "</$key>";
+        };
+        $xmlData .= "</txn>";
+
+        $response = wp_remote_post($this->cc_xml_api_url . $endpoint, array(
+          'method'  => 'POST',
+          'headers' => array(
+            'Content-Type'  => 'application/x-www-form-urlencoded',
+          ),
+          'body'    => http_build_query(
+            array('xmldata' => $xmlData)
           ),
           'timeout' => 90,
         ));
@@ -726,6 +947,7 @@ function prcsnpy_init()
           array(
             'sessionStoragePrecisionPay' => esc_js(self::SESSION_STORAGE_PRECISION_PAY),
             'sessionStoragePlaid' => esc_js(self::SESSION_STORAGE_PLAID),
+            'sessionStoragePrecisionPayCC' => esc_js(self::SESSION_STORAGE_PRECISION_PAY_CC)
           )
         );
       }

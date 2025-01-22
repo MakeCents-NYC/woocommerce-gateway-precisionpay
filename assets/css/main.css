@@ -6,7 +6,8 @@
   margin-bottom: 20px;
 }
 
-.wc-precisionpay-form #precisionpay-link-button {
+.wc-precisionpay-form #precisionpay-link-button,
+.wc-precisionpay-form #precisionpay-cc-button {
   color: white;
   border-radius: 50px;
   font-size: 18px;
@@ -20,14 +21,23 @@
   padding: 15px;
   text-transform: uppercase;
 }
-.wc-precisionpay-form  #precisionpay-link-button:hover {
+.wc-precisionpay-form #precisionpay-cc-button {
+  font-size: 16px;
+}
+#payment .payment_methods li .wc-precisionpay-form .precisionpay-p {
+  margin: 10px 0;
+}
+.wc-precisionpay-form  .precisionpay-button:hover {
   filter: brightness(125%);
 }
-.wc-precisionpay-form #precisionpay-link-button img {
+.wc-precisionpay-form .precisionpay-button img {
   width: 24px;
   height: 30px;
   margin: 0 !important;
   float: none !important;
+}
+.wc-precisionpay-form #precisionpay-cc-button img {
+  width: 20px;
 }
 #precisionpay-login-section {
   padding: 10px 0;
@@ -39,4 +49,8 @@
 .wc-precisionpay-form .clear {
   height: 0;
   overflow: hidden;
+}
+
+.woocommerce-error h3 {
+  font-size: 1em;
 }

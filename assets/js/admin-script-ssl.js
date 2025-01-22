@@ -1,6 +1,7 @@
 (function ($) {
   $(document).ready(function () {
     mcAddCheckboxSSLCheck();
+    
 
     function mcAddCheckboxSSLCheck() {
       var testModeCheckbox = $(
