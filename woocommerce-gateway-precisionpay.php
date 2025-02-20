@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              4.0.0-CCDEMO
+ * Version:              4.0.0-debug-8-LOCAL
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.7
@@ -153,7 +153,7 @@ function prcsnpy_init()
       public function __construct()
       {
         $this->id                  = 'wc_gateway_precisionpay';
-        $this->icon                = PRCSNPY_PLUGIN_URL . '/assets/img/precisionpay_logo_2x.png';
+        $this->icon                = $this->get_option('icon') ? $this->get_option('icon') : PRCSNPY_PLUGIN_URL . '/assets/img/precisionpay_logo_2x.png';
         $this->logo_mark           = PRCSNPY_PLUGIN_URL . '/assets/img/logo_mark_white.svg';
         $this->loading_icon        = PRCSNPY_PLUGIN_URL . '/assets/img/pp_loading_screen_300.png';
         $this->loading_icon_long   = PRCSNPY_PLUGIN_URL . '/assets/img/pp_loading_screen_w_text.png';
@@ -179,9 +179,9 @@ function prcsnpy_init()
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
         $this->api_key_header      = json_encode(array('apiKey' => $this->api_key, 'apiSecret' => $this->api_secret));
-        $this->api_url             = self::API_URL_PROD;
-        $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
-        $this->cc_api_url          = 'https://api.demo.convergepay.com/hosted-payments';
+        $this->api_url             = 'http://localhost:9000/api'; // 'https://staging.mymakecents.com/api'; // 'https://sandbox.myprecisionpay.com/api'; // self::API_URL_PROD;
+        $this->checkout_url        = 'http://localhost:5173'; // 'https://staging-checkout.mymakecents.com'; // 'https://sandbox-checkout.myprecisionpay.com'; // self::CHECKOUT_PORTAL_URL_PROD;
+        $this->cc_api_url          = 'https://api.demo.convergepay.com/hosted-payments'; // "https://www.convergepay.com/hosted-payments";
         $this->cc_xml_api_url      = 'https://api.demo.convergepay.com/VirtualMerchantDemo';
         $this->supports            = array('products', 'refunds');
 
@@ -291,7 +291,7 @@ function prcsnpy_init()
         $zip = sanitize_text_field($_POST['zipCode']);
         $address1 = sanitize_text_field($_POST['address1']);
 
-        $ch = curl_init(); // initialize curl handle
+        $ch = curl_init();    // initialize curl handle
         curl_setopt($ch, CURLOPT_URL, $url); // set url to post to
         curl_setopt($ch, CURLOPT_POST, true); // set POST method
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -417,6 +417,16 @@ function prcsnpy_init()
           'api_secret' => array(
             'title'       => __('API Secret', 'precisionpay-payments-for-woocommerce'),
             'type'        => 'password'
+          ),
+          'icon' => array(
+            'title'       => __('Logo Displayed on Checkout Page', 'precisionpay-payments-for-woocommerce'),
+            'type'        => 'select',
+            'options'     =>
+            array( // Array of options for select/multiselect inputs only.
+              PRCSNPY_PLUGIN_URL . '/assets/img/precisionpay_logo_2x.png' => 'default (standard logo)',
+              PRCSNPY_PLUGIN_URL . '/assets/img/precisionpay_logo_white_2x.png' => 'darkmode',
+              PRCSNPY_PLUGIN_URL . '/assets/img/precisionpay_logo_white_bg_2x.png' => 'slug (standard with white box background)',
+            ),
           ),
           'enableCreditCards' => array(
             'title'       => __('Enable Credit Card Payments', 'precisionpay-payments-for-woocommerce'),
@@ -618,6 +628,7 @@ function prcsnpy_init()
             'errorMessageTokenExpired' => __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce'),
             'errorMessagePlaidTokenExpired' => __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce'),
             'errorMessageNoValidAccounts' => __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce'),
+            'errorMessageInsufficientFunds' => __('Insufficient funds in authorized bank account. Please use another account to pay for this transaction.', 'precisionpay-payments-for-woocommerce'),
             'defaultButtonBg' => self::PRECISION_PAY_BRAND_COLOR,
             'defaultCCButtonBg' => self::CC_BUTTON_COLOR,
             'defaultButtonTitle' => $this->button_title,
@@ -675,22 +686,50 @@ function prcsnpy_init()
             $errorNotice = __('An unknown error occured while attempting to charge your account', 'precisionpay-payments-for-woocommerce');
             $responseErrorMessage = $payResponse_body ? $payResponse_body->detail : null;
             if ($responseErrorMessage) {
-              if ($responseErrorMessage === 'PrecisionPay token invalid') {
-                // Handle expired token
-                $errorNotice = __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce');
-              } else if ($responseErrorMessage === self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
-                // $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
-                $errorNotice = __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce');
-              } else if ($responseErrorMessage === self::ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND) {
-                $errorNotice = __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce');
-              } else {
-                $errorNotice = '';
-                if (is_array($responseErrorMessage)) {
-                  $errorNotice .= $payResponse_body->detail[0];
-                } else {
-                  $errorNotice .= $payResponse_body->detail;
-                }
+              switch ($responseErrorMessage) {
+                case 'PrecisionPay token invalid':
+                  // Handle expired token
+                  $errorNotice = __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce');
+                  break;
+                case self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN:
+                  // $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
+                  $errorNotice = __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce');
+                  break;
+                case self::ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND:
+                  $errorNotice = __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce');
+                  break;
+                case 'We are unable to proccess your payment due insufficient funds in your account':
+                case 'We are unable to proccess your payment due to insufficient funds in your account':
+                case "You don't have enough funds in your account for this transaction":
+                  $errorNotice = __('Insufficient funds in authorized bank account. Please use another account to pay for this transaction.', 'precisionpay-payments-for-woocommerce');
+                  break;
+                default:
+                  $errorNotice = '';
+                  if (is_array($responseErrorMessage)) {
+                    $errorNotice .= $payResponse_body->detail[0];
+                  } else {
+                    $errorNotice .= $payResponse_body->detail;
+                  }
+                  break;
               }
+
+              // TODO: Remove commented out code once we test the above switch statement works
+              // if ($responseErrorMessage === 'PrecisionPay token invalid') {
+              //   // Handle expired token
+              //   $errorNotice = __('Your PrecisionPay token expired, please log back in again', 'precisionpay-payments-for-woocommerce');
+              // } else if ($responseErrorMessage === self::ERROR_MESSAGE_EXPIRED_PLAID_TOKEN) {
+              //   // $errorNotice = __('Your account authorization has expired, authorizations expire after 30 minutes', 'precisionpay-payments-for-woocommerce');
+              //   $errorNotice = __("We're sorry, your PrecisionPay session has expired. Please reauthorize payment to complete your purchase.", 'precisionpay-payments-for-woocommerce');
+              // } else if ($responseErrorMessage === self::ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND) {
+              //   $errorNotice = __('There are no valid checking or savings accounts associated with this bank. Please reauthorize payment to fix this error.', 'precisionpay-payments-for-woocommerce');
+              // } else {
+              //   $errorNotice = '';
+              //   if (is_array($responseErrorMessage)) {
+              //     $errorNotice .= $payResponse_body->detail[0];
+              //   } else {
+              //     $errorNotice .= $payResponse_body->detail;
+              //   }
+              // }
             } else if ($isCCPayment) {
               $ccMessage = $payResponse_body->errorMessage ?
                 (string) $payResponse_body->errorMessage :

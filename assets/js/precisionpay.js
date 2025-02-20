@@ -16,6 +16,7 @@ function usePrecisionPayPaymentGateway($) {
   var errorMessageTokenExpired = precisionpay_data.errorMessageTokenExpired;
   var errorMessagePlaidTokenExpired = precisionpay_data.errorMessagePlaidTokenExpired;
   var errorMessageNoValidAccounts = precisionpay_data.errorMessageNoValidAccounts;
+  var errorMessageInsufficientFunds = precisionpay_data.errorMessageInsufficientFunds;
   var defaultButtonBg = precisionpay_data.defaultButtonBg;
   var defaultCCButtonBg = precisionpay_data.defaultCCButtonBg;
   var defaultButtonTitle = precisionpay_data.defaultButtonTitle;
@@ -76,6 +77,7 @@ function usePrecisionPayPaymentGateway($) {
         (errorText === errorMessageTokenExpired ||
           errorText === errorMessagePlaidTokenExpired ||
           errorText === errorMessageNoValidAccounts ||
+          errorText === errorMessageInsufficientFunds ||
           errorText.match(/Credit card error/))
       ) {
         resetButtonUI();
@@ -180,7 +182,7 @@ function usePrecisionPayPaymentGateway($) {
     // Add data to hidden fields
     addDataToHiddenFields(plaidData);
     // Also add to session storage in case we get "refreshed"
-    sessionStorage.setItem(SESSION_STORAGE_PLAID, JSON.stringify(pd));
+    sessionStorage.setItem(SESSION_STORAGE_PLAID, JSON.stringify(plaidData));
     updateUIToSuccess();
   }
 
