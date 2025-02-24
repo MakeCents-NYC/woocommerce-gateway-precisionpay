@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 3.5.0 =
+* Adds functionality for changing the PrecisionPay logo.
+* BugFix when a customer doesn't have enough funds in bank account, previously they couldn't reauthorize the payment with a different account.
+
 = 3.4.1 =
 * Minor Update: Wording on expired token error messages updated.
 

@@ -3,7 +3,7 @@ Contributors: daveprecisionpay
 Tags: woocommerce, precisionpay, checkout, payments, ecommerce
 Requires at least: 5.9
 Tested up to: 6.7
-Stable tag: 3.4.1
+Stable tag: 3.5.0
 Requires PHP: 7.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -79,10 +79,15 @@ No, however many of them will already have customer accounts. For those who don'
 
 == Changelog ==
 
-= 3.4.1 =
-* Minor Update: Wording on expired token error messages updated.
+= 3.5.0 =
+* Adds functionality for changing the PrecisionPay logo.
+* BugFix when a customer doesn't have enough funds in bank account, previously they couldn't reauthorize the payment with a different account.
 
 == Upgrade Notice ==
+
+= 3.5.0 =
+* Merchants can now change the PrecisionPay logo to fit their WooCommerce theme.
+* Fixes bug when a customer doesn't have enough funds in bank account. User can now select a different account.
 
 = 3.4.1 =
 * Minor Update: Wording on expired token error messages updated to give greater context to user.
