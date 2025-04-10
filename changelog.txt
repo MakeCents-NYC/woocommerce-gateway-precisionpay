@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 3.5.1 =
+* Updates platform name for API.
+
 = 3.5.0 =
 * Adds functionality for changing the PrecisionPay logo.
 * BugFix when a customer doesn't have enough funds in bank account, previously they couldn't reauthorize the payment with a different account.

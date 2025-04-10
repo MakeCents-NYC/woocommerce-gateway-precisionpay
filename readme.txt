@@ -79,11 +79,13 @@ No, however many of them will already have customer accounts. For those who don'
 
 == Changelog ==
 
-= 3.5.0 =
-* Adds functionality for changing the PrecisionPay logo.
-* BugFix when a customer doesn't have enough funds in bank account, previously they couldn't reauthorize the payment with a different account.
+= 3.5.1 =
+* Updates platform name for API.
 
 == Upgrade Notice ==
+
+= 3.5.1 =
+* Updates platform name so API will know this is the PrecisionPay WooCommerce plugin.
 
 = 3.5.0 =
 * Merchants can now change the PrecisionPay logo to fit their WooCommerce theme.

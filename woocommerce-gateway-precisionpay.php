@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.5.1-SANDBOX
+ * Version:              3.5.1
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.7
@@ -180,8 +180,8 @@ function prcsnpy_init()
         $this->api_secret          = $this->get_option('api_secret');
         $this->hasAPIKeys          = $this->api_key && $this->api_secret;
         $this->api_key_header      = json_encode(array('apiKey' => $this->api_key, 'apiSecret' => $this->api_secret));
-        $this->api_url             = 'https://sandbox.myprecisionpay.com/api'; // self::API_URL_PROD;
-        $this->checkout_url        = 'https://sandbox-checkout.myprecisionpay.com'; // self::CHECKOUT_PORTAL_URL_PROD;
+        $this->api_url             = self::API_URL_PROD;
+        $this->checkout_url        = self::CHECKOUT_PORTAL_URL_PROD;
         $this->cc_api_url          = 'https://api.demo.convergepay.com/hosted-payments'; // "https://www.convergepay.com/hosted-payments";
         $this->cc_xml_api_url      = 'https://api.demo.convergepay.com/VirtualMerchantDemo';
         $this->supports            = array('products', 'refunds');
