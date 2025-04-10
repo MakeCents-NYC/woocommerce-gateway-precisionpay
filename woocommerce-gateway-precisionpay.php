@@ -4,7 +4,7 @@
  * Plugin Name:          PrecisionPay Payments for WooCommerce
  * Plugin URI:           https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay
  * Description:          Accept online bank payments in your WooCommerce store with PrecisionPay.
- * Version:              3.5.0-SANDBOX
+ * Version:              3.5.1-SANDBOX
  * Requires PHP:         7.2
  * Requires at least:    5.9
  * Tested up to:         6.7
@@ -75,7 +75,7 @@ add_filter('woocommerce_payment_gateways', 'prcsnpy_add_to_gateways');
  *
  * @class       PrecisionPay_Payments_For_WC
  * @extends     WC_Payment_Gateway
- * @version     3.5.0
+ * @version     3.5.1
  * @package     WooCommerce/Classes/Payment
  * @author      PrecisionPay
  */
@@ -86,7 +86,7 @@ function prcsnpy_init()
   if (!class_exists('PrecisionPay_Payments_For_WC')) :
     define('PRCSNPY_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
     define('PRCSNPY_PLUGIN_NAME', 'PrecisionPay Payments for WooCommerce');
-    define('PRCSNPY_VERSION', '3.5.0');
+    define('PRCSNPY_VERSION', '3.5.1');
 
     class PrecisionPay_Payments_For_WC extends WC_Payment_Gateway
     {
@@ -95,6 +95,7 @@ function prcsnpy_init()
       const PRECISION_PAY_TITLE = 'PrecisionPay';
       const ERROR_MESSAGE_EXPIRED_PLAID_TOKEN = 'Your account authorization has expired, authorizations expire after 30 minutes';
       const ERROR_MESSAGE_NO_BANK_ACCOUNT_FOUND = 'There are no valid checking or savings account(s) associated with this Item.';
+      const PRECISION_PAY_PLATFORM = 'WooCommerce';
 
       // Session constants
       const SESSION_STORAGE_PRECISION_PAY = 'mcPrecisionPayData';
@@ -766,9 +767,10 @@ function prcsnpy_init()
         $orderNumber = $this->get_order_number($order, $order_id);
         $paymentData = array(
           'precisionPayToken' => $precisionpayCheckoutToken,
-          'amount' => floatval($order->get_total()),
-          'order'  => strval($orderNumber),
-          'env'    => $this->env,
+          'amount'            => floatval($order->get_total()),
+          'order'             => strval($orderNumber),
+          'platform'          => self::PRECISION_PAY_PLATFORM,
+          'env'               => $this->env,
         );
 
         $payResponse = $this->api_post('/checkout/pay', $paymentData);
@@ -822,6 +824,7 @@ function prcsnpy_init()
           'external_user_id' => $precisionpay_registered_user_id, // We need to pass this, but it will usually be an empty string
           'amount'           => floatval($order->get_total()), // number (int or decimal)
           'order'            => strval($orderNumber), // <- Needs to come in as a string
+          'platform'         => self::PRECISION_PAY_PLATFORM,
           'env'              => $this->env, // Lets API know if we are in sandbox or live mode
         );
 
