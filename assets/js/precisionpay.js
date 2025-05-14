@@ -1,7 +1,7 @@
 function usePrecisionPayPaymentGateway($) {
   // ONLY RUN IF PLAID IS AVAILABLE
   if (typeof Plaid === 'undefined') {
-    console.log('...MISSING PLAID...');
+    console.error('...MISSING PLAID...');
     return;
   }
 
@@ -48,9 +48,11 @@ function usePrecisionPayPaymentGateway($) {
     }
 
     // We are now listening for submit of the form to add our own loader if user is using PrecisionPay
-    $('.woocommerce-checkout').on('submit', function () {
-      setPrecisionPayLoader($, loadingImg, loadingImgLong);
-    }); // .addEventListener('submit', setLoader);
+    if ($('.woocommerce-checkout').length > 0) {
+      $('.woocommerce-checkout').on('submit', function () {
+        setPrecisionPayLoader($, loadingImg, loadingImgLong);
+      }); // .addEventListener('submit', setLoader);
+    }
 
     // launch checkout portal on PP button click
     $('#precisionpay-link-button').click(authorizePayment);

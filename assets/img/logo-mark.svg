@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f15a29;
+      }
+
+      .cls-2 {
+        fill: #666;
+      }
+    </style>
+  </defs>
+  <path class="cls-1" d="m72,39.35c18,0,32.65,14.65,32.65,32.65s-14.65,32.65-32.65,32.65-32.65-14.65-32.65-32.65,14.65-32.65,32.65-32.65m0-11.1c-24.16,0-43.75,19.59-43.75,43.75s19.59,43.75,43.75,43.75,43.75-19.59,43.75-43.75-19.59-43.75-43.75-43.75h0Z"/>
+  <circle class="cls-1" cx="72" cy="72" r="11.1"/>
+  <g>
+    <rect class="cls-2" x="68.39" y="122.81" width="7.22" height="21.19" rx="3.61" ry="3.61"/>
+    <rect class="cls-2" x="68.39" y="0" width="7.22" height="21.19" rx="3.61" ry="3.61"/>
+    <rect class="cls-2" x="6.98" y="61.41" width="7.22" height="21.19" rx="3.61" ry="3.61" transform="translate(82.59 61.41) rotate(90)"/>
+    <rect class="cls-2" x="129.8" y="61.41" width="7.22" height="21.19" rx="3.61" ry="3.61" transform="translate(205.41 -61.41) rotate(90)"/>
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+{
+  "name": "woocommerce-gateway-precisionpay",
+  "version": "1.0.0",
+  "description": "PrecisionPay Payments for WooCommerce is the official PrecisionPay payment gateway for WooCommerce. This plugin uses Plaid (https://plaid.com/) along with the PrecisionPay checkout portal to allow your customers to pay with PrecisionPay as a guest (using Plaid) or as a PrecisionPay user (if they already have an account at myprecisionpay.com).",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "lint:js": "wp-scripts lint-js",
+    "lint:css": "wp-scripts lint-style",
+    "format": "wp-scripts format",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay/issues"
+  },
+  "homepage": "https://github.com/MakeCents-NYC/woocommerce-gateway-precisionpay#readme",
+  "devDependencies": {
+    "@wordpress/scripts": "^30.15.0"
+  },
+  "dependencies": {
+    "@wordpress/html-entities": "^4.22.0",
+    "@wordpress/i18n": "^5.22.0"
+  }
+}
